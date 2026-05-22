@@ -1,0 +1,32 @@
+# Ignore everything by default
+*
+
+# Track these explicitly
+!.gitignore
+!.gitmodules
+!CLAUDE.md
+
+# Dotfiles
+!.bashrc
+!.bash_logout
+!.profile
+!.zshenv
+
+# Submodule directories
+!opcode/
+!space-agent/
+!OpenJarvis/
+!projects/
+!projects/claude/
+!projects/claude/smart-connections-mcp/
+
+# Tool/cache dirs to keep ignored even if whitelisted above
+.cache/
+.cargo/
+.rustup/
+.nvm/
+.bun/
+.npm/
+.local/
+.config/
+snap/
