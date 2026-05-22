@@ -1,0 +1,12 @@
+[submodule "opcode"]
+	path = opcode
+	url = https://github.com/getAsterisk/opcode.git
+[submodule "space-agent"]
+	path = space-agent
+	url = https://github.com/agent0ai/space-agent.git
+[submodule "OpenJarvis"]
+	path = OpenJarvis
+	url = https://github.com/open-jarvis/OpenJarvis.git
+[submodule "projects/claude/smart-connections-mcp"]
+	path = projects/claude/smart-connections-mcp
+	url = https://github.com/gogogadgetbytes/smart-connections-mcp
