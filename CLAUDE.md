@@ -4,12 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository Overview
 
-This is a monorepo containing three independent AI/agent projects plus a subproject:
+This is a monorepo containing three independent AI/agent projects plus subprojects:
 
 - **opcode** — Desktop GUI for Claude Code management (TypeScript/React + Rust/Tauri)
 - **space-agent** — Browser-first AI agent with Node.js server (JavaScript/Vue)
 - **OpenJarvis** — Personal AI framework for on-device LLMs (Python + Rust extensions)
 - **projects/claude/smart-connections-mcp** — MCP server for Obsidian Smart Connections (TypeScript/Node.js)
+- **projects/missed-call-textback** — Missed call text back service for small businesses (Node.js + Twilio)
 
 Each project is fully independent with its own toolchain.
 
@@ -112,6 +113,20 @@ tsc --noEmit             # type check
 
 ---
 
+## projects/missed-call-textback
+
+Twilio-based missed call text back service. Plain Node 22 (ESM), zero dependencies, built-in `node:sqlite`.
+
+### Commands
+```bash
+cd projects/missed-call-textback
+cp .env.example .env     # configure
+npm test                 # node:test suite
+npm start                # run server
+```
+
+---
+
 ## Toolchain Quick Reference
 
 | Project | Package Manager | Runtime |
@@ -120,3 +135,4 @@ tsc --noEmit             # type check
 | space-agent | npm       | Node.js 20+ |
 | OpenJarvis  | uv + Cargo | Python 3.10+ |
 | smart-connections-mcp | npm | Node.js |
+| missed-call-textback | none (npm scripts) | Node.js 22+ |
