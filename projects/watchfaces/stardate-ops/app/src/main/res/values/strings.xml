@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Stardate Ops</string>
+    <string name="theme_label">Console theme</string>
+    <string name="theme_classic">Classic</string>
+    <string name="theme_blue_alert">Blue Alert</string>
+    <string name="theme_red_alert">Red Alert</string>
+    <string name="theme_engineering">Engineering</string>
+    <string name="seconds_label">Show seconds</string>
+</resources>

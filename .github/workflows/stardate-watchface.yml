@@ -1,0 +1,39 @@
+name: Build Stardate Ops watch face
+
+on:
+  push:
+    paths:
+      - "projects/watchfaces/stardate-ops/**"
+      - ".github/workflows/stardate-watchface.yml"
+  pull_request:
+    paths:
+      - "projects/watchfaces/stardate-ops/**"
+      - ".github/workflows/stardate-watchface.yml"
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: projects/watchfaces/stardate-ops
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Build APK
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon assembleRelease
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: stardate-ops-watchface-apk
+          path: projects/watchfaces/stardate-ops/app/build/outputs/apk/release/*.apk
+          if-no-files-found: error

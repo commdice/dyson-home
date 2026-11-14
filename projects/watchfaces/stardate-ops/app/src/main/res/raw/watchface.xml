@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Stardate Ops - an LCARS-inspired digital watch face.
+  Watch Face Format (WFF) v1. Canvas is 450x450 and scales to the
+  Galaxy Watch 7 40mm (432px) and 44mm (480px) screens.
+
+  Theme colour slots ([CONFIGURATION.theme.N]):
+    0 = primary (elbows, stardate)   1 = secondary (lavender bars)
+    2 = tertiary (blue bars)         3 = accent (time, readouts)
+    4 = alert (bottom bar)
+-->
+<WatchFace width="450" height="450">
+  <Metadata key="CLOCK_TYPE" value="DIGITAL" />
+  <Metadata key="PREVIEW_TIME" value="10:08:32" />
+
+  <UserConfigurations>
+    <ColorConfiguration id="theme" displayName="theme_label" defaultValue="0">
+      <ColorOption id="0" displayName="theme_classic"
+          colors="#FFFF9900 #FFCC99CC #FF9999FF #FFFFCC99 #FFCC6666" />
+      <ColorOption id="1" displayName="theme_blue_alert"
+          colors="#FF5599FF #FF99CCFF #FF3366CC #FFCCE6FF #FF6688CC" />
+      <ColorOption id="2" displayName="theme_red_alert"
+          colors="#FFFF3333 #FFFF9966 #FFCC3333 #FFFFCCCC #FFFF6666" />
+      <ColorOption id="3" displayName="theme_engineering"
+          colors="#FFFFAA00 #FFFFDD55 #FFCC7722 #FFFFEEBB #FFDD8844" />
+    </ColorConfiguration>
+    <BooleanConfiguration id="showSeconds" displayName="seconds_label" defaultValue="TRUE" />
+  </UserConfigurations>
+
+  <Scene backgroundColor="#FF000000">
+
+    <!-- ========== LCARS FRAME (hidden in always-on mode) ========== -->
+    <Group name="frame" x="0" y="0" width="450" height="450">
+      <Variant mode="AMBIENT" target="alpha" value="0" />
+
+      <!-- Top-left elbow -->
+      <PartDraw x="0" y="0" width="450" height="450">
+        <RoundRectangle x="60" y="100" width="100" height="80" cornerRadiusX="30" cornerRadiusY="30">
+          <Fill color="[CONFIGURATION.theme.0]" />
+        </RoundRectangle>
+        <Rectangle x="90" y="100" width="70" height="18">
+          <Fill color="[CONFIGURATION.theme.0]" />
+        </Rectangle>
+        <Rectangle x="60" y="150" width="40" height="30">
+          <Fill color="[CONFIGURATION.theme.0]" />
+        </Rectangle>
+        <!-- Inner curve cut-out -->
+        <RoundRectangle x="100" y="118" width="120" height="100" cornerRadiusX="16" cornerRadiusY="16">
+          <Fill color="#FF000000" />
+        </RoundRectangle>
+      </PartDraw>
+
+      <!-- Bottom-left elbow -->
+      <PartDraw x="0" y="0" width="450" height="450">
+        <RoundRectangle x="60" y="270" width="100" height="80" cornerRadiusX="30" cornerRadiusY="30">
+          <Fill color="[CONFIGURATION.theme.0]" />
+        </RoundRectangle>
+        <Rectangle x="60" y="270" width="40" height="30">
+          <Fill color="[CONFIGURATION.theme.0]" />
+        </Rectangle>
+        <Rectangle x="90" y="332" width="70" height="18">
+          <Fill color="[CONFIGURATION.theme.0]" />
+        </Rectangle>
+        <RoundRectangle x="100" y="232" width="120" height="100" cornerRadiusX="16" cornerRadiusY="16">
+          <Fill color="#FF000000" />
+        </RoundRectangle>
+      </PartDraw>
+
+      <!-- Left column segments -->
+      <PartDraw x="0" y="0" width="450" height="450">
+        <Rectangle x="60" y="184" width="40" height="42">
+          <Fill color="[CONFIGURATION.theme.1]" />
+        </Rectangle>
+        <Rectangle x="60" y="230" width="40" height="36">
+          <Fill color="[CONFIGURATION.theme.2]" />
+        </Rectangle>
+      </PartDraw>
+
+      <!-- Top bar segments -->
+      <PartDraw x="0" y="0" width="450" height="450">
+        <Rectangle x="164" y="100" width="86" height="18">
+          <Fill color="[CONFIGURATION.theme.1]" />
+        </Rectangle>
+        <Rectangle x="254" y="100" width="76" height="18">
+          <Fill color="[CONFIGURATION.theme.2]" />
+        </Rectangle>
+        <RoundRectangle x="334" y="100" width="40" height="18" cornerRadiusX="9" cornerRadiusY="9">
+          <Fill color="[CONFIGURATION.theme.3]" />
+        </RoundRectangle>
+        <Rectangle x="334" y="100" width="20" height="18">
+          <Fill color="[CONFIGURATION.theme.3]" />
+        </Rectangle>
+      </PartDraw>
+
+      <!-- Bottom bar segments -->
+      <PartDraw x="0" y="0" width="450" height="450">
+        <Rectangle x="164" y="332" width="76" height="18">
+          <Fill color="[CONFIGURATION.theme.4]" />
+        </Rectangle>
+        <Rectangle x="244" y="332" width="86" height="18">
+          <Fill color="[CONFIGURATION.theme.1]" />
+        </Rectangle>
+        <RoundRectangle x="334" y="332" width="40" height="18" cornerRadiusX="9" cornerRadiusY="9">
+          <Fill color="[CONFIGURATION.theme.0]" />
+        </RoundRectangle>
+        <Rectangle x="334" y="332" width="20" height="18">
+          <Fill color="[CONFIGURATION.theme.0]" />
+        </Rectangle>
+      </PartDraw>
+
+      <!-- Decorative register numbers on the left column -->
+      <PartText x="62" y="204" width="34" height="20">
+        <Text align="END">
+          <Font size="14" weight="BOLD" color="#FF000000">
+            <Template>03</Template>
+          </Font>
+        </Text>
+      </PartText>
+      <PartText x="62" y="246" width="34" height="20">
+        <Text align="END">
+          <Font size="14" weight="BOLD" color="#FF000000">
+            <Template>47</Template>
+          </Font>
+        </Text>
+      </PartText>
+      <PartText x="62" y="150" width="34" height="20">
+        <Text align="END">
+          <Font size="14" weight="BOLD" color="#FF000000">
+            <Template>OPS</Template>
+          </Font>
+        </Text>
+      </PartText>
+    </Group>
+
+    <!-- ========== DATE (top) ========== -->
+    <PartText x="80" y="58" width="290" height="36">
+      <Variant mode="AMBIENT" target="alpha" value="170" />
+      <Text align="CENTER">
+        <Font size="26" weight="BOLD" color="[CONFIGURATION.theme.0]">
+          <Template>%s  %s %s<Parameter expression="[DAY_OF_WEEK_S]" /><Parameter expression="[DAY]" /><Parameter expression="[MONTH_S]" /></Template>
+        </Font>
+      </Text>
+    </PartText>
+
+    <!-- ========== TIME ========== -->
+    <DigitalClock x="112" y="128" width="232" height="104">
+      <TimeText format="hh:mm" hourFormat="SYNC_TO_DEVICE" align="CENTER">
+        <Font size="84" weight="BOLD" color="[CONFIGURATION.theme.3]" />
+      </TimeText>
+    </DigitalClock>
+
+    <BooleanConfiguration id="showSeconds">
+      <BooleanOption id="TRUE">
+        <DigitalClock x="348" y="176" width="50" height="40">
+          <Variant mode="AMBIENT" target="alpha" value="0" />
+          <TimeText format="ss" align="START">
+            <Font size="30" weight="BOLD" color="[CONFIGURATION.theme.0]" />
+          </TimeText>
+        </DigitalClock>
+      </BooleanOption>
+    </BooleanConfiguration>
+
+    <!-- ========== SENSOR READOUTS (hidden in always-on mode) ========== -->
+    <Group name="readouts" x="0" y="0" width="450" height="450">
+      <Variant mode="AMBIENT" target="alpha" value="0" />
+
+      <!-- Label pills -->
+      <PartDraw x="0" y="0" width="450" height="450">
+        <RoundRectangle x="112" y="244" width="82" height="20" cornerRadiusX="10" cornerRadiusY="10">
+          <Fill color="[CONFIGURATION.theme.0]" />
+        </RoundRectangle>
+        <RoundRectangle x="200" y="244" width="88" height="20" cornerRadiusX="10" cornerRadiusY="10">
+          <Fill color="[CONFIGURATION.theme.1]" />
+        </RoundRectangle>
+        <RoundRectangle x="294" y="244" width="82" height="20" cornerRadiusX="10" cornerRadiusY="10">
+          <Fill color="[CONFIGURATION.theme.2]" />
+        </RoundRectangle>
+      </PartDraw>
+
+      <PartText x="112" y="244" width="82" height="20">
+        <Text align="CENTER">
+          <Font size="14" weight="BOLD" color="#FF000000"><Template>POWER</Template></Font>
+        </Text>
+      </PartText>
+      <PartText x="200" y="244" width="88" height="20">
+        <Text align="CENTER">
+          <Font size="14" weight="BOLD" color="#FF000000"><Template>STEPS</Template></Font>
+        </Text>
+      </PartText>
+      <PartText x="294" y="244" width="82" height="20">
+        <Text align="CENTER">
+          <Font size="14" weight="BOLD" color="#FF000000"><Template>BIO</Template></Font>
+        </Text>
+      </PartText>
+
+      <!-- Values -->
+      <PartText x="108" y="266" width="90" height="36">
+        <Text align="CENTER">
+          <Font size="28" weight="BOLD" color="[CONFIGURATION.theme.3]">
+            <Template>%s%%<Parameter expression="[BATTERY_PERCENT]" /></Template>
+          </Font>
+        </Text>
+      </PartText>
+      <PartText x="196" y="266" width="96" height="36">
+        <Text align="CENTER">
+          <Font size="28" weight="BOLD" color="[CONFIGURATION.theme.3]">
+            <Template>%s<Parameter expression="[STEP_COUNT]" /></Template>
+          </Font>
+        </Text>
+      </PartText>
+      <PartText x="290" y="266" width="90" height="36">
+        <Text align="CENTER">
+          <Font size="28" weight="BOLD" color="[CONFIGURATION.theme.3]">
+            <Template>%s<Parameter expression="[HEART_RATE]" /></Template>
+          </Font>
+        </Text>
+      </PartText>
+    </Group>
+
+    <!-- ========== STARDATE (bottom) ==========
+         Fan-style stardate: (year - 2000) * 1000 + fraction of year, plus a
+         tenths digit that ticks through the day. 14 Nov 2026 10:00 = 26868.4 -->
+    <PartText x="70" y="356" width="310" height="32">
+      <Variant mode="AMBIENT" target="alpha" value="170" />
+      <Text align="CENTER">
+        <Font size="22" weight="BOLD" color="[CONFIGURATION.theme.0]">
+          <Template>STARDATE %s.%s<Parameter expression="([YEAR] - 2000) * 1000 + ([DAY_OF_YEAR] * 1000) / 366" /><Parameter expression="([HOUR_0_23] * 10) / 24" /></Template>
+        </Font>
+      </Text>
+    </PartText>
+
+  </Scene>
+</WatchFace>
