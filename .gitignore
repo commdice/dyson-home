@@ -19,6 +19,8 @@
 !projects/
 !projects/claude/
 !projects/claude/smart-connections-mcp/
+!projects/missed-call-textback/
+!projects/missed-call-textback/**
 
 # Tool/cache dirs to keep ignored even if whitelisted above
 .cache/
