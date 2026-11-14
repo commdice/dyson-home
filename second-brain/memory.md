@@ -15,6 +15,11 @@ Fact or context, in one to three lines.
 
 <!-- Entries go below this line, newest first. -->
 
+## 2026-11-14 — No access to the old shop's systems
+I no longer work at the collision repair shop, so I have no VPN or any other access
+to its systems. Treat [notes/collision-repair-shop-it-setup.md](notes/collision-repair-shop-it-setup.md)
+as a historical record, not something I can use or check.
+
 ## 2026-11-09 — Collision repair shop IT setup
 The shop runs T21 on a local Windows Server, with access through Windows accounts
 (no separate T21 login). It also uses a Cisco Meraki client VPN, a network printer,

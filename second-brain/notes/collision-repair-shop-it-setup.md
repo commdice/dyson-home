@@ -1,7 +1,11 @@
 # Collision repair shop IT setup
 
-- **Last updated:** 2026-11-09
+- **Last updated:** 2026-11-14
 - **Related:** [memory.md](../memory.md)
+
+> **Former employer.** I no longer work at this shop, so I have **no access** to any
+> of these systems, including the Meraki VPN. Everything below is a record of how
+> things were set up while I was IT manager, not something I can use or check now.
 
 ## Summary
 
@@ -16,7 +20,7 @@ five separate manual jobs; nothing provisions everything from one console.
 |---|---|---|
 | **T21** | Shop management software | Runs on a local Windows Server. There is no separate T21 login: access comes from the person's Windows user account (Active Directory, or local users on a standalone server), group membership and a T21 role/profile. |
 | **Windows Server** | Hosts T21 and user accounts | Done at the server over RDP or console. New accounts get a temporary password that must be changed at first login. |
-| **Cisco Meraki client VPN** | Remote / second-site access | Set up in the Meraki dashboard, separately from the Windows account. Connection details go to the user through a secure channel, never plain email. Test from the user's laptop before calling it done. The step most often forgotten. |
+| **Cisco Meraki client VPN** | Remote / second-site access | Set up in the Meraki dashboard, separately from the Windows account. Connection details go to the user through a secure channel, never plain email. Test from the user's laptop before calling it done. The step most often forgotten. **No longer available to me** (left the shop). |
 | **Network printer** | Standard shop printer | Added on each workstation by IP or network browse, with the right driver; print a test page. |
 | **Telstra** | Company mobiles / eSIM | Requested by email to Telstra. Needs the employee's name, start date and personal mobile number. Not every shop-floor role gets a company mobile. |
 | **Google Drive** | Onboarding records | One folder per hire: `<Full Name> - Onboarding`, with `Signed Forms`, `Training Records`, `IT & Access` subfolders. |
