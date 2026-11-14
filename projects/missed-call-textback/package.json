@@ -1,0 +1,15 @@
+{
+  "name": "missed-call-textback",
+  "version": "1.0.0",
+  "description": "Missed call text back: when a customer's call goes unanswered, automatically text them so the lead isn't lost.",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "start": "node --no-warnings --env-file=.env src/server.js",
+    "dev": "node --no-warnings --env-file=.env --watch src/server.js",
+    "test": "node --no-warnings --test test/*.test.js"
+  }
+}
