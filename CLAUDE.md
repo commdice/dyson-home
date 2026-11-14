@@ -112,6 +112,18 @@ tsc --noEmit             # type check
 
 ---
 
+## second-brain
+
+A plain-Markdown personal knowledge base (no code, no toolchain).
+
+- **Start at `second-brain/map.md`**: it says where each type of information lives
+  (`memory.md`, `lessons.md`, `decisions.md`, `notes/`, `people/`, `projects/`).
+- Keep one topic per file, with lowercase hyphenated file names.
+- When answering from it: open only the files the map points to, name the source
+  file in the answer, and if the information isn't there, say so instead of guessing.
+
+---
+
 ## Toolchain Quick Reference
 
 | Project | Package Manager | Runtime |

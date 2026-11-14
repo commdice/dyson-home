@@ -20,6 +20,10 @@
 !projects/claude/
 !projects/claude/smart-connections-mcp/
 
+# Second brain (plain Markdown knowledge base)
+!second-brain/
+!second-brain/**
+
 # Tool/cache dirs to keep ignored even if whitelisted above
 .cache/
 .cargo/
