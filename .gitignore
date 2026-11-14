@@ -20,6 +20,10 @@
 !projects/claude/
 !projects/claude/smart-connections-mcp/
 
+# Regular (non-submodule) projects
+!projects/google-reviews/
+!projects/google-reviews/**
+
 # Tool/cache dirs to keep ignored even if whitelisted above
 .cache/
 .cargo/

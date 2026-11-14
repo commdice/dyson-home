@@ -1,0 +1,4 @@
+job_id,name,email,phone,job_summary,completed_at,sms_consent
+INV-1001,Jane Doe,jane@example.com,,your exterior repaint,2026-11-10,no
+INV-1002,Bob Ray,,+15555550101,your custom colour match,2026-11-11,yes
+INV-1003,Maria Chen,maria@example.com,+15555550102,your kitchen cabinet refinish,2026-11-12,yes
