@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Warp Drive</string>
+    <string name="accent_label">Accent colour</string>
+    <string name="accent_ice">Ice Blue</string>
+    <string name="accent_gold">Command Gold</string>
+    <string name="accent_red">Alert Red</string>
+    <string name="accent_teal">Science Teal</string>
+    <string name="speed_label">Warp speed</string>
+    <string name="speed_impulse">Impulse</string>
+    <string name="speed_warp5">Warp 5</string>
+    <string name="speed_warp9">Warp 9</string>
+    <string name="ship_label">Starship flyby</string>
+</resources>

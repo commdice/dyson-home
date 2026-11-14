@@ -1,23 +1,27 @@
-name: Build Stardate Ops watch face
+name: Build watch faces
 
 on:
   push:
     branches: [master]
     paths:
-      - "projects/watchfaces/stardate-ops/**"
+      - "projects/watchfaces/**"
       - ".github/workflows/stardate-watchface.yml"
   pull_request:
     paths:
-      - "projects/watchfaces/stardate-ops/**"
+      - "projects/watchfaces/**"
       - ".github/workflows/stardate-watchface.yml"
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        face: [stardate-ops, warp-drive]
     defaults:
       run:
-        working-directory: projects/watchfaces/stardate-ops
+        working-directory: projects/watchfaces/${{ matrix.face }}
     steps:
       - uses: actions/checkout@v4
 
@@ -25,6 +29,12 @@ jobs:
         with:
           distribution: temurin
           java-version: "17"
+
+      - name: Check generated XML is up to date
+        if: hashFiles(format('projects/watchfaces/{0}/tools/generate.py', matrix.face)) != ''
+        run: |
+          python3 tools/generate.py
+          git diff --exit-code -- app/src/main/res/raw/watchface.xml
 
       # ubuntu-latest ships with the Android SDK (ANDROID_HOME is preset), and
       # AGP downloads any missing platform/build-tools itself.
@@ -35,6 +45,6 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: stardate-ops-watchface-apk
-          path: projects/watchfaces/stardate-ops/app/build/outputs/apk/release/*.apk
+          name: ${{ matrix.face }}-watchface-apk
+          path: projects/watchfaces/${{ matrix.face }}/app/build/outputs/apk/release/*.apk
           if-no-files-found: error
