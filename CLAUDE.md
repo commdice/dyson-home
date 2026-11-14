@@ -112,6 +112,20 @@ tsc --noEmit             # type check
 
 ---
 
+## projects/google-reviews
+
+Policy-compliant Google review automation (`reviewbot`): review requests, review monitoring, Claude-drafted replies with human approval. Python + SQLite, stdlib only (optional `anthropic`).
+
+### Commands
+```bash
+cd projects/google-reviews
+uv sync --extra ai --extra dev
+uv run pytest -q
+uv run reviewbot --help
+```
+
+---
+
 ## Toolchain Quick Reference
 
 | Project | Package Manager | Runtime |
@@ -120,3 +134,4 @@ tsc --noEmit             # type check
 | space-agent | npm       | Node.js 20+ |
 | OpenJarvis  | uv + Cargo | Python 3.10+ |
 | smart-connections-mcp | npm | Node.js |
+| google-reviews | uv | Python 3.10+ |
