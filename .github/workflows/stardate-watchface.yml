@@ -2,6 +2,7 @@ name: Build Stardate Ops watch face
 
 on:
   push:
+    branches: [master]
     paths:
       - "projects/watchfaces/stardate-ops/**"
       - ".github/workflows/stardate-watchface.yml"
@@ -25,8 +26,8 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - uses: android-actions/setup-android@v3
-
+      # ubuntu-latest ships with the Android SDK (ANDROID_HOME is preset), and
+      # AGP downloads any missing platform/build-tools itself.
       - name: Build APK
         run: |
           chmod +x gradlew
