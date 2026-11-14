@@ -19,6 +19,10 @@
 !projects/
 !projects/claude/
 !projects/claude/smart-connections-mcp/
+!projects/watchfaces/
+!projects/watchfaces/**
+!.github/
+!.github/**
 
 # Tool/cache dirs to keep ignored even if whitelisted above
 .cache/
