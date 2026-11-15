@@ -37,6 +37,8 @@ ACCENTS = [
 ]
 
 T = "[SECOND_MILLISECOND]"
+STARDATE_EXPR = ("floor((([YEAR] - 2000) * 1000 + ([DAY_OF_YEAR] - 1 + [HOUR_0_23] / 24) * 1000 / 366)"
+                 " * 10) / 10")
 SHIP_START, SHIP_SPEED, SHIP_X0 = 20, 60, -170   # ship enters at second 20
 SHIP_Y = 287
 SHIP_SCALE = 1.3
@@ -148,9 +150,12 @@ def build_xml():
         for sid, label, _t, _s in SPEEDS)
     accent = "[CONFIGURATION.accent.0]"
 
-    stardate = ('STARDATE %s.%s'
-                '<Parameter expression="([YEAR] - 2000) * 1000 + ([DAY_OF_YEAR] * 1000) / 366" />'
-                '<Parameter expression="([HOUR_0_23] * 10) / 24" />')
+    # WFF division is floating point and floats print with up to 3 decimals,
+    # so round down to one decimal place ourselves.
+    stardate = ('STARDATE %s'
+                f'<Parameter expression="{STARDATE_EXPR}" />')
+    time_12 = '%s:%s<Parameter expression="[HOUR_1_12]" /><Parameter expression="[MINUTE_Z]" />'
+    time_24 = '%s:%s<Parameter expression="[HOUR_0_23_Z]" /><Parameter expression="[MINUTE_Z]" />'
 
     return f"""<?xml version="1.0" encoding="utf-8"?>
 <!--
@@ -174,6 +179,10 @@ def build_xml():
 {speed_cfg}
     </ListConfiguration>
     <BooleanConfiguration id="showShip" displayName="ship_label" defaultValue="TRUE" />
+    <ListConfiguration id="clockFormat" displayName="clock_label" defaultValue="0">
+      <ListOption id="0" displayName="clock_12" />
+      <ListOption id="1" displayName="clock_24" />
+    </ListConfiguration>
   </UserConfigurations>
 
   <Scene backgroundColor="#FF000208">
@@ -191,11 +200,15 @@ def build_xml():
     <!-- ========== TEXT ========== -->
 {text_xml(80, 100, 290, 34, 24, accent, '%s  %s %s<Parameter expression="[DAY_OF_WEEK_S]" /><Parameter expression="[DAY]" /><Parameter expression="[MONTH_S]" />', 170)}
 
-    <DigitalClock x="75" y="136" width="300" height="116">
-      <TimeText format="hh:mm" hourFormat="SYNC_TO_DEVICE" align="CENTER">
-        <Font size="100" weight="BOLD" color="#FFFFFFFF" />
-      </TimeText>
-    </DigitalClock>
+    <!-- Time is drawn as plain text: DigitalClock did not render on Galaxy Watch 7. -->
+    <ListConfiguration id="clockFormat">
+      <ListOption id="0">
+{text_xml(60, 136, 330, 116, 100, "#FFFFFFFF", time_12)}
+      </ListOption>
+      <ListOption id="1">
+{text_xml(60, 136, 330, 116, 100, "#FFFFFFFF", time_24)}
+      </ListOption>
+    </ListConfiguration>
 
 {text_xml(90, 254, 270, 30, 20, accent, 'WARP CORE %s%%<Parameter expression="[BATTERY_PERCENT]" />', 0)}
 

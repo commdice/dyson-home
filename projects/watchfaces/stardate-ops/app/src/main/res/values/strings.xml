@@ -7,4 +7,7 @@
     <string name="theme_red_alert">Red Alert</string>
     <string name="theme_engineering">Engineering</string>
     <string name="seconds_label">Show seconds</string>
+    <string name="clock_label">Clock format</string>
+    <string name="clock_12">12-hour</string>
+    <string name="clock_24">24-hour</string>
 </resources>

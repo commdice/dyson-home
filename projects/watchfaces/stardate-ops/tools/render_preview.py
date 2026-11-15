@@ -8,6 +8,7 @@ faithful layout preview.
 
 Usage: render_preview.py <watchface.xml> <out.svg> [theme_id] [--ambient]
 """
+import math
 import re
 import sys
 import xml.etree.ElementTree as ET
@@ -17,6 +18,7 @@ SAMPLE = {
     "DAY_OF_WEEK_S": "Sat", "DAY": "14", "MONTH_S": "Nov",
     "YEAR": 2026, "DAY_OF_YEAR": 318, "HOUR_0_23": 10,
     "BATTERY_PERCENT": "82", "STEP_COUNT": "6402", "HEART_RATE": "71",
+    "HOUR_1_12": "10", "HOUR_0_23_Z": "10", "MINUTE_Z": "08", "SECOND_Z": "32",
 }
 TIME = {"hh:mm": "10:08", "ss": "32"}
 FONT = "'Antonio','Inter','Liberation Sans',sans-serif"
@@ -45,8 +47,9 @@ def main():
 
     def evaluate(expr):
         e = re.sub(r"\[(\w+)\]", lambda m: str(SAMPLE[m.group(1)]), expr)
-        if re.fullmatch(r"[\d\s+\-*/()]+", e):
-            return str(int(eval(e.replace("/", "//"))))  # WFF int maths
+        if re.search(r"[+\-*/]|floor", e):
+            v = eval(e, {"floor": math.floor})  # WFF maths is floating point
+            return f"{v:.3f}".rstrip("0").rstrip(".")  # watch prints <= 3 decimals
         return e
 
     parts = []
@@ -78,6 +81,10 @@ def main():
             if tag == "Group":
                 if not hidden(el):
                     walk(el)
+            elif tag == "ListConfiguration":
+                for opt in el:
+                    if opt.get("id") == "0":
+                        walk(opt)
             elif tag == "BooleanConfiguration":
                 for opt in el:
                     if opt.get("id") == "TRUE":

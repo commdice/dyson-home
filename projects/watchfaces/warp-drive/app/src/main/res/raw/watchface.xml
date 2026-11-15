@@ -25,6 +25,10 @@
         <ListOption id="2" displayName="speed_warp9" />
     </ListConfiguration>
     <BooleanConfiguration id="showShip" displayName="ship_label" defaultValue="TRUE" />
+    <ListConfiguration id="clockFormat" displayName="clock_label" defaultValue="0">
+      <ListOption id="0" displayName="clock_12" />
+      <ListOption id="1" displayName="clock_24" />
+    </ListConfiguration>
   </UserConfigurations>
 
   <Scene backgroundColor="#FF000208">
@@ -1623,11 +1627,27 @@
       </Text>
     </PartText>
 
-    <DigitalClock x="75" y="136" width="300" height="116">
-      <TimeText format="hh:mm" hourFormat="SYNC_TO_DEVICE" align="CENTER">
-        <Font size="100" weight="BOLD" color="#FFFFFFFF" />
-      </TimeText>
-    </DigitalClock>
+    <!-- Time is drawn as plain text: DigitalClock did not render on Galaxy Watch 7. -->
+    <ListConfiguration id="clockFormat">
+      <ListOption id="0">
+    <PartText x="60" y="136" width="330" height="116">
+      <Text align="CENTER">
+        <Font size="100" weight="BOLD" color="#FFFFFFFF">
+          <Template>%s:%s<Parameter expression="[HOUR_1_12]" /><Parameter expression="[MINUTE_Z]" /></Template>
+        </Font>
+      </Text>
+    </PartText>
+      </ListOption>
+      <ListOption id="1">
+    <PartText x="60" y="136" width="330" height="116">
+      <Text align="CENTER">
+        <Font size="100" weight="BOLD" color="#FFFFFFFF">
+          <Template>%s:%s<Parameter expression="[HOUR_0_23_Z]" /><Parameter expression="[MINUTE_Z]" /></Template>
+        </Font>
+      </Text>
+    </PartText>
+      </ListOption>
+    </ListConfiguration>
 
     <PartText x="90" y="254" width="270" height="30">
       <Variant mode="AMBIENT" target="alpha" value="0" />
@@ -1642,7 +1662,7 @@
       <Variant mode="AMBIENT" target="alpha" value="170" />
       <Text align="CENTER">
         <Font size="20" weight="BOLD" color="[CONFIGURATION.accent.0]">
-          <Template>STARDATE %s.%s<Parameter expression="([YEAR] - 2000) * 1000 + ([DAY_OF_YEAR] * 1000) / 366" /><Parameter expression="([HOUR_0_23] * 10) / 24" /></Template>
+          <Template>STARDATE %s<Parameter expression="floor((([YEAR] - 2000) * 1000 + ([DAY_OF_YEAR] - 1 + [HOUR_0_23] / 24) * 1000 / 366) * 10) / 10" /></Template>
         </Font>
       </Text>
     </PartText>

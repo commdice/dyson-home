@@ -11,4 +11,7 @@
     <string name="speed_warp5">Warp 5</string>
     <string name="speed_warp9">Warp 9</string>
     <string name="ship_label">Starship flyby</string>
+    <string name="clock_label">Clock format</string>
+    <string name="clock_12">12-hour</string>
+    <string name="clock_24">24-hour</string>
 </resources>
