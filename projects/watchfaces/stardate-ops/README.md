@@ -10,15 +10,30 @@ No app code, so there's no battery drain from background services.
 
 | Element | Details |
 |---|---|
-| Time | Big digital time, follows your phone's 12/24h setting |
+| Time | Big digital time; 12h or 24h via **Customise → Clock format** |
 | Seconds | Can be switched off in the watch face editor |
 | Date | Day, date, month along the top |
-| Readouts | **POWER** (battery %), **STEPS**, **BIO** (heart rate) |
+| Readouts | **POWER** (battery %), **STEPS**, **BIO** (heart rate, with a dot that flashes once per heartbeat) |
+| Complications | **ATMOS**, **COMMS**, **ALT**: three slots you fill from other apps (see below). Tap one to open its app |
 | Stardate | A fan-style stardate: `(year − 2000) × 1000 + fraction of year`, plus a tenths digit that ticks through the day |
 | Themes | Classic, Blue Alert, Red Alert, Engineering |
 | Always-on | Frame and readouts switch off; only time, date and stardate stay lit (saves battery, avoids burn-in) |
 
-Customise it: long-press the watch face → **Customise** → pick a theme / toggle seconds.
+Customise it: long-press the watch face → **Customise** → pick a theme / toggle seconds / clock format.
+
+### Setting up the ATMOS / COMMS / ALT slots
+
+Long-press the face → **Customise** → swipe to **Complications**, tap a slot and pick a source:
+
+| Slot | Suggested source | Default until you change it |
+|---|---|---|
+| ATMOS | **Weather** (Samsung Weather) shows the current temperature | Sunrise/sunset |
+| COMMS | Your email app's complication if it has one (e.g. Samsung Email, Outlook), otherwise **Notifications** | Unread notification count |
+| ALT | An altimeter/barometer app that provides a complication | Next calendar event |
+
+Wear OS watch faces can't read the altitude sensor directly. The ALT slot only shows altitude
+if an app on your watch provides an altitude complication. The labels are fixed, so you can put anything
+in any slot.
 
 ## Get the APK
 

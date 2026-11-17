@@ -150,20 +150,16 @@
     <!-- Drawn as plain text: DigitalClock did not render on Galaxy Watch 7. -->
     <ListConfiguration id="clockFormat">
       <ListOption id="0">
-        <PartText x="112" y="128" width="232" height="104">
+        <PartText x="112" y="118" width="232" height="86">
           <Text align="CENTER">
-            <Font size="84" weight="BOLD" color="[CONFIGURATION.theme.3]">
-              <Template>%s:%s<Parameter expression="[HOUR_1_12]" /><Parameter expression="[MINUTE_Z]" /></Template>
-            </Font>
+            <Font size="70" weight="BOLD" color="[CONFIGURATION.theme.3]"><Template>%s:%s<Parameter expression="[HOUR_1_12]" /><Parameter expression="[MINUTE_Z]" /></Template></Font>
           </Text>
         </PartText>
       </ListOption>
       <ListOption id="1">
-        <PartText x="112" y="128" width="232" height="104">
+        <PartText x="112" y="118" width="232" height="86">
           <Text align="CENTER">
-            <Font size="84" weight="BOLD" color="[CONFIGURATION.theme.3]">
-              <Template>%s:%s<Parameter expression="[HOUR_0_23_Z]" /><Parameter expression="[MINUTE_Z]" /></Template>
-            </Font>
+            <Font size="70" weight="BOLD" color="[CONFIGURATION.theme.3]"><Template>%s:%s<Parameter expression="[HOUR_0_23_Z]" /><Parameter expression="[MINUTE_Z]" /></Template></Font>
           </Text>
         </PartText>
       </ListOption>
@@ -171,72 +167,176 @@
 
     <BooleanConfiguration id="showSeconds">
       <BooleanOption id="TRUE">
-        <PartText x="348" y="176" width="50" height="40">
+        <PartText x="334" y="146" width="50" height="34">
           <Variant mode="AMBIENT" target="alpha" value="0" />
           <Text align="START">
-            <Font size="30" weight="BOLD" color="[CONFIGURATION.theme.0]">
-              <Template>%s<Parameter expression="[SECOND_Z]" /></Template>
-            </Font>
+            <Font size="26" weight="BOLD" color="[CONFIGURATION.theme.0]"><Template>%s<Parameter expression="[SECOND_Z]" /></Template></Font>
           </Text>
         </PartText>
       </BooleanOption>
     </BooleanConfiguration>
 
-    <!-- ========== SENSOR READOUTS (hidden in always-on mode) ========== -->
+    <!-- ========== READOUTS (hidden in always-on mode) ==========
+         Row 1: built-in sensors. Row 2: complication slots the wearer picks
+         (long-press > Customise > Complications). Tapping a slot opens its app. -->
     <Group name="readouts" x="0" y="0" width="450" height="450">
       <Variant mode="AMBIENT" target="alpha" value="0" />
 
-      <!-- Label pills -->
       <PartDraw x="0" y="0" width="450" height="450">
-        <RoundRectangle x="112" y="244" width="82" height="20" cornerRadiusX="10" cornerRadiusY="10">
+        <RoundRectangle x="112" y="206" width="82" height="18" cornerRadiusX="9" cornerRadiusY="9">
           <Fill color="[CONFIGURATION.theme.0]" />
         </RoundRectangle>
-        <RoundRectangle x="200" y="244" width="88" height="20" cornerRadiusX="10" cornerRadiusY="10">
+        <RoundRectangle x="200" y="206" width="88" height="18" cornerRadiusX="9" cornerRadiusY="9">
           <Fill color="[CONFIGURATION.theme.1]" />
         </RoundRectangle>
-        <RoundRectangle x="294" y="244" width="82" height="20" cornerRadiusX="10" cornerRadiusY="10">
+        <RoundRectangle x="294" y="206" width="82" height="18" cornerRadiusX="9" cornerRadiusY="9">
           <Fill color="[CONFIGURATION.theme.2]" />
         </RoundRectangle>
+        <RoundRectangle x="112" y="262" width="82" height="18" cornerRadiusX="9" cornerRadiusY="9">
+          <Fill color="[CONFIGURATION.theme.2]" />
+        </RoundRectangle>
+        <RoundRectangle x="200" y="262" width="88" height="18" cornerRadiusX="9" cornerRadiusY="9">
+          <Fill color="[CONFIGURATION.theme.0]" />
+        </RoundRectangle>
+        <RoundRectangle x="294" y="262" width="82" height="18" cornerRadiusX="9" cornerRadiusY="9">
+          <Fill color="[CONFIGURATION.theme.1]" />
+        </RoundRectangle>
+      </PartDraw>
+      <PartText x="112" y="206" width="82" height="18">
+          <Text align="CENTER">
+            <Font size="13" weight="BOLD" color="#FF000000"><Template>POWER</Template></Font>
+          </Text>
+        </PartText>
+      <PartText x="200" y="206" width="88" height="18">
+          <Text align="CENTER">
+            <Font size="13" weight="BOLD" color="#FF000000"><Template>STEPS</Template></Font>
+          </Text>
+        </PartText>
+      <PartText x="294" y="206" width="82" height="18">
+          <Text align="CENTER">
+            <Font size="13" weight="BOLD" color="#FF000000"><Template>BIO</Template></Font>
+          </Text>
+        </PartText>
+      <PartText x="112" y="262" width="82" height="18">
+          <Text align="CENTER">
+            <Font size="13" weight="BOLD" color="#FF000000"><Template>ATMOS</Template></Font>
+          </Text>
+        </PartText>
+      <PartText x="200" y="262" width="88" height="18">
+          <Text align="CENTER">
+            <Font size="13" weight="BOLD" color="#FF000000"><Template>COMMS</Template></Font>
+          </Text>
+        </PartText>
+      <PartText x="294" y="262" width="82" height="18">
+          <Text align="CENTER">
+            <Font size="13" weight="BOLD" color="#FF000000"><Template>ALT</Template></Font>
+          </Text>
+        </PartText>
+
+      <!-- Row 1 values -->
+      <PartText x="108" y="225" width="90" height="30">
+          <Text align="CENTER">
+            <Font size="24" weight="BOLD" color="[CONFIGURATION.theme.3]"><Template>%s%%<Parameter expression="[BATTERY_PERCENT]" /></Template></Font>
+          </Text>
+        </PartText>
+      <PartText x="196" y="225" width="96" height="30">
+          <Text align="CENTER">
+            <Font size="24" weight="BOLD" color="[CONFIGURATION.theme.3]"><Template>%s<Parameter expression="[STEP_COUNT]" /></Template></Font>
+          </Text>
+        </PartText>
+      <PartText x="306" y="225" width="74" height="30">
+          <Text align="CENTER">
+            <Font size="24" weight="BOLD" color="[CONFIGURATION.theme.3]"><Template>%s<Parameter expression="[HEART_RATE]" /></Template></Font>
+          </Text>
+        </PartText>
+
+      <!-- Heartbeat: a dot that flashes once per beat at the measured heart rate -->
+      <PartDraw x="0" y="0" width="450" height="450">
+        <Transform target="alpha" value="255 - (([SECOND_MILLISECOND] * [HEART_RATE] / 60) % 1) * 255" />
+        <Ellipse x="298" y="234" width="12" height="12">
+          <Fill color="[CONFIGURATION.theme.4]" />
+        </Ellipse>
       </PartDraw>
 
-      <PartText x="112" y="244" width="82" height="20">
-        <Text align="CENTER">
-          <Font size="14" weight="BOLD" color="#FF000000"><Template>POWER</Template></Font>
-        </Text>
-      </PartText>
-      <PartText x="200" y="244" width="88" height="20">
-        <Text align="CENTER">
-          <Font size="14" weight="BOLD" color="#FF000000"><Template>STEPS</Template></Font>
-        </Text>
-      </PartText>
-      <PartText x="294" y="244" width="82" height="20">
-        <Text align="CENTER">
-          <Font size="14" weight="BOLD" color="#FF000000"><Template>BIO</Template></Font>
-        </Text>
-      </PartText>
-
-      <!-- Values -->
-      <PartText x="108" y="266" width="90" height="36">
-        <Text align="CENTER">
-          <Font size="28" weight="BOLD" color="[CONFIGURATION.theme.3]">
-            <Template>%s%%<Parameter expression="[BATTERY_PERCENT]" /></Template>
-          </Font>
-        </Text>
-      </PartText>
-      <PartText x="196" y="266" width="96" height="36">
-        <Text align="CENTER">
-          <Font size="28" weight="BOLD" color="[CONFIGURATION.theme.3]">
-            <Template>%s<Parameter expression="[STEP_COUNT]" /></Template>
-          </Font>
-        </Text>
-      </PartText>
-      <PartText x="290" y="266" width="90" height="36">
-        <Text align="CENTER">
-          <Font size="28" weight="BOLD" color="[CONFIGURATION.theme.3]">
-            <Template>%s<Parameter expression="[HEART_RATE]" /></Template>
-          </Font>
-        </Text>
-      </PartText>
+      <!-- Row 2: complication slots -->
+      <ComplicationSlot slotId="0" displayName="slot_atmos" x="112" y="262" width="82" height="49"
+          supportedTypes="SHORT_TEXT RANGED_VALUE" isCustomizable="TRUE">
+        <DefaultProviderPolicy defaultSystemProvider="SUNRISE_SUNSET" defaultSystemProviderType="SHORT_TEXT" />
+        <BoundingBox x="0" y="0" width="82" height="49" />
+        <Complication type="SHORT_TEXT">
+          <PartText x="0" y="19" width="82" height="30">
+          <Text align="CENTER">
+            <Font size="24" weight="BOLD" color="[CONFIGURATION.theme.3]"><Template>%s<Parameter expression="[COMPLICATION.TEXT]" /></Template></Font>
+          </Text>
+        </PartText>
+        </Complication>
+        <Complication type="RANGED_VALUE">
+          <PartText x="0" y="19" width="82" height="30">
+          <Text align="CENTER">
+            <Font size="24" weight="BOLD" color="[CONFIGURATION.theme.3]"><Template>%s<Parameter expression="[COMPLICATION.TEXT]" /></Template></Font>
+          </Text>
+        </PartText>
+        </Complication>
+        <Complication type="EMPTY">
+          <PartText x="0" y="19" width="82" height="30">
+          <Text align="CENTER">
+            <Font size="24" weight="BOLD" color="[CONFIGURATION.theme.3]"><Template>--</Template></Font>
+          </Text>
+        </PartText>
+        </Complication>
+      </ComplicationSlot>
+      <ComplicationSlot slotId="1" displayName="slot_comms" x="200" y="262" width="88" height="49"
+          supportedTypes="SHORT_TEXT RANGED_VALUE" isCustomizable="TRUE">
+        <DefaultProviderPolicy defaultSystemProvider="UNREAD_NOTIFICATION_COUNT" defaultSystemProviderType="SHORT_TEXT" />
+        <BoundingBox x="0" y="0" width="88" height="49" />
+        <Complication type="SHORT_TEXT">
+          <PartText x="0" y="19" width="88" height="30">
+          <Text align="CENTER">
+            <Font size="24" weight="BOLD" color="[CONFIGURATION.theme.3]"><Template>%s<Parameter expression="[COMPLICATION.TEXT]" /></Template></Font>
+          </Text>
+        </PartText>
+        </Complication>
+        <Complication type="RANGED_VALUE">
+          <PartText x="0" y="19" width="88" height="30">
+          <Text align="CENTER">
+            <Font size="24" weight="BOLD" color="[CONFIGURATION.theme.3]"><Template>%s<Parameter expression="[COMPLICATION.TEXT]" /></Template></Font>
+          </Text>
+        </PartText>
+        </Complication>
+        <Complication type="EMPTY">
+          <PartText x="0" y="19" width="88" height="30">
+          <Text align="CENTER">
+            <Font size="24" weight="BOLD" color="[CONFIGURATION.theme.3]"><Template>--</Template></Font>
+          </Text>
+        </PartText>
+        </Complication>
+      </ComplicationSlot>
+      <ComplicationSlot slotId="2" displayName="slot_alt" x="294" y="262" width="82" height="49"
+          supportedTypes="SHORT_TEXT RANGED_VALUE" isCustomizable="TRUE">
+        <DefaultProviderPolicy defaultSystemProvider="NEXT_EVENT" defaultSystemProviderType="SHORT_TEXT" />
+        <BoundingBox x="0" y="0" width="82" height="49" />
+        <Complication type="SHORT_TEXT">
+          <PartText x="0" y="19" width="82" height="30">
+          <Text align="CENTER">
+            <Font size="24" weight="BOLD" color="[CONFIGURATION.theme.3]"><Template>%s<Parameter expression="[COMPLICATION.TEXT]" /></Template></Font>
+          </Text>
+        </PartText>
+        </Complication>
+        <Complication type="RANGED_VALUE">
+          <PartText x="0" y="19" width="82" height="30">
+          <Text align="CENTER">
+            <Font size="24" weight="BOLD" color="[CONFIGURATION.theme.3]"><Template>%s<Parameter expression="[COMPLICATION.TEXT]" /></Template></Font>
+          </Text>
+        </PartText>
+        </Complication>
+        <Complication type="EMPTY">
+          <PartText x="0" y="19" width="82" height="30">
+          <Text align="CENTER">
+            <Font size="24" weight="BOLD" color="[CONFIGURATION.theme.3]"><Template>--</Template></Font>
+          </Text>
+        </PartText>
+        </Complication>
+      </ComplicationSlot>
     </Group>
 
     <!-- ========== STARDATE (bottom) ==========

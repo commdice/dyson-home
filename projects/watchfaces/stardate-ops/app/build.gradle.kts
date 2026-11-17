@@ -11,8 +11,8 @@ android {
         // Watch Face Format needs Wear OS 4+ (API 33). Galaxy Watch 7 ships Wear OS 5 (API 34).
         minSdk = 33
         targetSdk = 34
-        versionCode = 2
-        versionName = "1.1"
+        versionCode = 3
+        versionName = "1.2"
     }
 
     buildTypes {

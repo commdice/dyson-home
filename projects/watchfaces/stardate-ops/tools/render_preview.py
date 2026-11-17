@@ -20,6 +20,8 @@ SAMPLE = {
     "BATTERY_PERCENT": "82", "STEP_COUNT": "6402", "HEART_RATE": "71",
     "HOUR_1_12": "10", "HOUR_0_23_Z": "10", "MINUTE_Z": "08", "SECOND_Z": "32",
 }
+# Sample complication text per slotId (weather, unread count, altitude).
+COMPLICATION_SAMPLE = {"0": "12°", "1": "3", "2": "148m"}
 TIME = {"hh:mm": "10:08", "ss": "32"}
 FONT = "'Antonio','Inter','Liberation Sans',sans-serif"
 
@@ -46,7 +48,7 @@ def main():
         return argb(colors[int(m.group(1))] if m else v)
 
     def evaluate(expr):
-        e = re.sub(r"\[(\w+)\]", lambda m: str(SAMPLE[m.group(1)]), expr)
+        e = re.sub(r"\[([\w.]+)\]", lambda m: str(SAMPLE[m.group(1)]), expr)
         if re.search(r"[+\-*/]|floor", e):
             v = eval(e, {"floor": math.floor})  # WFF maths is floating point
             return f"{v:.3f}".rstrip("0").rstrip(".")  # watch prints <= 3 decimals
@@ -75,30 +77,41 @@ def main():
             f'font-weight="{weight}" fill="{fill}" fill-opacity="{a * opacity:.2f}" '
             f'text-anchor="{anchor}" dominant-baseline="central">{escape(s)}</text>')
 
-    def walk(node):
+    def walk(node, ox=0.0, oy=0.0):
         for el in node:
             tag = el.tag
             if tag == "Group":
                 if not hidden(el):
-                    walk(el)
+                    walk(el, ox, oy)
             elif tag == "ListConfiguration":
                 for opt in el:
                     if opt.get("id") == "0":
-                        walk(opt)
+                        walk(opt, ox, oy)
             elif tag == "BooleanConfiguration":
                 for opt in el:
                     if opt.get("id") == "TRUE":
-                        walk(opt)
+                        walk(opt, ox, oy)
+            elif tag == "ComplicationSlot":
+                SAMPLE["COMPLICATION.TEXT"] = COMPLICATION_SAMPLE.get(el.get("slotId"), "--")
+                for comp in el.findall("Complication"):
+                    if comp.get("type") == "SHORT_TEXT":
+                        walk(comp, ox + float(el.get("x")), oy + float(el.get("y")))
             elif tag == "PartDraw":
                 if hidden(el):
                     continue
                 for shape in el:
+                    if shape.find("Fill") is None:
+                        continue  # Transform / Variant
                     fill, a = color(shape.find("Fill").get("color"))
-                    g = {k: shape.get(k) for k in ("x", "y", "width", "height")}
-                    r = shape.get("cornerRadiusX", "0")
-                    parts.append(
-                        f'<rect x="{g["x"]}" y="{g["y"]}" width="{g["width"]}" height="{g["height"]}" '
-                        f'rx="{r}" fill="{fill}" fill-opacity="{a}"/>')
+                    x, y, w, h = (float(shape.get(k)) for k in ("x", "y", "width", "height"))
+                    x, y = x + ox, y + oy
+                    if shape.tag == "Ellipse":
+                        parts.append(f'<ellipse cx="{x + w / 2}" cy="{y + h / 2}" rx="{w / 2}" ry="{h / 2}" '
+                                     f'fill="{fill}" fill-opacity="{a}"/>')
+                    else:
+                        r = shape.get("cornerRadiusX", "0")
+                        parts.append(f'<rect x="{x}" y="{y}" width="{w}" height="{h}" '
+                                     f'rx="{r}" fill="{fill}" fill-opacity="{a}"/>')
             elif tag == "PartText":
                 if hidden(el):
                     continue
@@ -109,14 +122,8 @@ def main():
                 for p in tpl.findall("Parameter"):
                     s = s.replace("%s", evaluate(p.get("expression")), 1)
                 s = s.replace("\0", "%")
-                text(*(float(el.get(k)) for k in ("x", "y", "width", "height")),
-                     t.get("align", "START"), font, s, dim(el))
-            elif tag == "DigitalClock":
-                if hidden(el):
-                    continue
-                tt = el.find("TimeText")
-                text(*(float(el.get(k)) for k in ("x", "y", "width", "height")),
-                     tt.get("align", "START"), tt.find("Font"), TIME[tt.get("format")], dim(el))
+                x, y, w, h = (float(el.get(k)) for k in ("x", "y", "width", "height"))
+                text(x + ox, y + oy, w, h, t.get("align", "START"), font, s, dim(el))
 
     walk(root.find("Scene"))
     bg = root.find("Scene").get("backgroundColor")
