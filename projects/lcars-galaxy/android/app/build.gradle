@@ -1,0 +1,73 @@
+plugins {
+    id 'com.android.application'
+}
+
+// The web UI (projects/lcars-galaxy/index.html) is the single source of truth;
+// it is copied into the APK's assets at build time.
+def webSrc = file('../..')
+def webAssets = layout.buildDirectory.dir('generated/webassets')
+
+tasks.register('copyWebAssets', Copy) {
+    from(webSrc) {
+        include 'index.html', 'icon.svg'
+    }
+    into webAssets
+}
+
+def runNumber = (System.getenv('GITHUB_RUN_NUMBER') ?: '1').toInteger()
+
+// Signing: uses a release keystore from env vars when provided (see README),
+// otherwise the committed sideload key so every build can update the last one.
+def ksPath = System.getenv('GOPS_KEYSTORE_PATH')
+
+android {
+    namespace 'com.galaxyops.lcars'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'com.galaxyops.lcars'
+        minSdk 26
+        targetSdk 34
+        versionCode runNumber
+        versionName "1.0.${runNumber}"
+    }
+
+    signingConfigs {
+        sideload {
+            storeFile ksPath ? file(ksPath) : file('galaxyops-debug.keystore')
+            storePassword System.getenv('GOPS_KEYSTORE_PASSWORD') ?: 'android'
+            keyAlias System.getenv('GOPS_KEY_ALIAS') ?: 'galaxyops'
+            keyPassword System.getenv('GOPS_KEY_PASSWORD') ?: 'android'
+        }
+    }
+
+    buildTypes {
+        debug {
+            signingConfig signingConfigs.sideload
+        }
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.sideload
+        }
+    }
+
+    sourceSets {
+        main {
+            assets.srcDir(webAssets)
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    lint {
+        abortOnError false
+        checkReleaseBuilds false
+    }
+}
+
+tasks.named('preBuild') {
+    dependsOn 'copyWebAssets'
+}

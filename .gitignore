@@ -21,6 +21,9 @@
 !projects/claude/smart-connections-mcp/
 !projects/lcars-galaxy/
 !projects/lcars-galaxy/**
+!.github/
+!.github/workflows/
+!.github/workflows/lcars-galaxy-apk.yml
 
 # Tool/cache dirs to keep ignored even if whitelisted above
 .cache/
@@ -32,3 +35,9 @@
 .local/
 .config/
 snap/
+
+# Android build outputs
+projects/lcars-galaxy/android/.gradle/
+projects/lcars-galaxy/android/build/
+projects/lcars-galaxy/android/app/build/
+projects/lcars-galaxy/android/local.properties

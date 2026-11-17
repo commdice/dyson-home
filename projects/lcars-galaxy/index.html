@@ -30,7 +30,7 @@
     --bar: 20px;
     --gap: 4px;
     --radius: 56px;
-    --font: "Antonio", "Arial Narrow", "Roboto Condensed", sans-serif;
+    --font: "Antonio", "Arial Narrow", "Roboto Condensed", "sans-serif-condensed", sans-serif;
   }
   :root[data-theme="blue"] {
     --c1: #5588ff; --c2: #88aaff; --c3: #aaccff; --c4: #99bbee;
@@ -46,6 +46,7 @@
   }
 
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  [hidden] { display: none !important; }
   html, body { margin: 0; height: 100%; background: var(--bg); }
   body {
     color: var(--text);
@@ -111,6 +112,7 @@
   .navbtn:nth-child(4) { background: var(--c6); }
   .navbtn:nth-child(5) { background: var(--c5); }
   .navbtn:nth-child(6) { background: var(--c7); }
+  .navbtn:nth-child(7) { background: var(--c1); }
   .navbtn.active { filter: brightness(1.25); box-shadow: inset -8px 0 0 #fff8; }
   .navbtn:active, .pill:active, .tile:active { filter: brightness(1.5); }
   .side .fill { flex: 1 1 auto; background: var(--c2); min-height: 20px; transition: background .3s; }
@@ -233,6 +235,7 @@
     <button class="navbtn" data-panel="nav"><span><small>04</small>NAV</span></button>
     <button class="navbtn" data-panel="log"><span><small>05</small>LOG</span></button>
     <button class="navbtn" data-panel="config"><span><small>06</small>CONFIG</span></button>
+    <button class="navbtn" data-panel="apps" hidden><span><small>07</small>APPS</span></button>
     <div class="fill"></div>
     <div class="fill alt"></div>
   </nav>
@@ -347,6 +350,11 @@
 
     <!-- CONFIG -->
     <section class="panel" id="config" data-title="CONFIG">
+      <div id="launcherCfg" hidden>
+        <h2>LAUNCHER</h2>
+        <p class="sub" id="homeState"></p>
+        <div class="row"><button class="pill alt" id="btnSetHome">SET AS HOME SCREEN</button></div>
+      </div>
       <h2>INTERFACE</h2>
       <div class="toggle">AUDIO CHIRPS <button class="pill" data-toggle="sound" aria-pressed="true">ON</button></div>
       <div class="toggle">HAPTICS <button class="pill" data-toggle="haptics" aria-pressed="true">ON</button></div>
@@ -371,6 +379,17 @@
       <p class="sub" id="installHint">Install: browser menu &rarr; Add to Home screen.</p>
       <div class="row"><button class="pill" id="btnInstall" hidden>INSTALL TO HOME SCREEN</button></div>
     </section>
+    <!-- APPS (Android app only) -->
+    <section class="panel" id="apps" data-title="APPS">
+      <h2>APP DIRECTORY</h2>
+      <input type="text" id="appSearch" placeholder="Search apps" autocomplete="off">
+      <div class="row">
+        <button class="pill" id="btnPin">PIN MODE: OFF</button>
+        <button class="pill alt" id="btnRefreshApps">RESCAN</button>
+      </div>
+      <p class="sub" id="appCount"></p>
+      <div class="grid" id="appGrid"></div>
+    </section>
   </main>
 
   <!-- footer -->
@@ -387,6 +406,7 @@
   "use strict";
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const N = window.GalaxyNative || null; // present when running inside the Android app
 
   /* ---------- storage (safe) ---------- */
   const store = {
@@ -414,7 +434,13 @@
   }
   const chirps = [[1320, 1760], [990, 1480], [1760, 1320], [1175, 1568], [880, 1320, 1760]];
   const beep = () => { tone(chirps[(Math.random() * chirps.length) | 0], 0.06); buzz(12); };
-  const buzz = (ms) => { if (settings.haptics && navigator.vibrate) try { navigator.vibrate(ms); } catch {} };
+  const buzz = (ms) => {
+    if (!settings.haptics) return;
+    try {
+      if (N) N.vibrate(Array.isArray(ms) ? ms.reduce((a, b) => a + b, 0) : ms);
+      else if (navigator.vibrate) navigator.vibrate(ms);
+    } catch {}
+  };
 
   document.addEventListener("pointerdown", (e) => {
     if (e.target.closest("button, a.tile")) beep();
@@ -472,7 +498,10 @@
     m.style.background = level < 0.2 ? "var(--c7)" : "var(--c5)";
     if (level < 0.15 && !charging) status("WARNING: POWER RESERVES CRITICAL", 5000);
   }
-  if (navigator.getBattery) {
+  if (N && N.battery) {
+    const u = () => { try { const b = JSON.parse(N.battery()); if (typeof b.level === "number") setBatt(b.level, b.charging); } catch {} };
+    u(); setInterval(u, 30000); addEventListener("focus", u);
+  } else if (navigator.getBattery) {
     navigator.getBattery().then(b => {
       const u = () => setBatt(b.level, b.charging);
       u(); b.addEventListener("levelchange", u); b.addEventListener("chargingchange", u);
@@ -609,12 +638,14 @@
 
   /* ---------- fullscreen / wake lock ---------- */
   $("#btnFull").addEventListener("click", () => {
+    if (N) return show("apps");
     const d = document;
     if (!d.fullscreenElement) d.documentElement.requestFullscreen?.({ navigationUI: "hide" }).catch(() => status("FULL SCREEN UNAVAILABLE"));
     else d.exitFullscreen?.();
   });
   let wakeLock = null;
   async function applyWake() {
+    if (N) { N.keepAwake(!!settings.wake); return; }
     try {
       if (settings.wake && "wakeLock" in navigator) {
         wakeLock = await navigator.wakeLock.request("screen");
@@ -712,6 +743,7 @@
   });
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   $("#btnLogVoice").addEventListener("click", () => {
+    if (N) { $("#btnLogVoice").classList.add("blink"); status("LISTENING...", 6000); N.startVoice(); return; }
     if (!SR) return status("VOICE INPUT UNAVAILABLE");
     const r = new SR(); r.lang = navigator.language || "en-US"; r.interimResults = false;
     r.onresult = (e) => { const ta = $("#logText"); ta.value = (ta.value + " " + e.results[0][0].transcript).trim(); };
@@ -730,6 +762,67 @@
   if (matchMedia("(display-mode: standalone)").matches) $("#installHint").textContent = "Running as installed app.";
   if ("serviceWorker" in navigator && location.protocol === "https:") {
     navigator.serviceWorker.register("sw.js").catch(() => {});
+  }
+
+  /* ---------- Android app integration ---------- */
+  if (N) {
+    $('[data-panel="apps"]').hidden = false;
+    $("#launcherCfg").hidden = false;
+    $("#installHint").hidden = true;
+    $("#btnFull").textContent = "ALL APPS";
+    let apps = [], pinMode = false;
+    const renderApps = () => {
+      const q = $("#appSearch").value.trim().toLowerCase();
+      const list = apps.filter(a => !q || a.label.toLowerCase().includes(q));
+      $("#appCount").textContent = list.length + " OF " + apps.length + " APPLICATIONS";
+      $("#appGrid").replaceChildren(...list.map((a, i) => {
+        const b = document.createElement("button");
+        b.className = "tile";
+        b.innerHTML = `<span class="n">${pad(i + 1)}</span>`;
+        b.append(document.createTextNode(a.label.toUpperCase()));
+        b.addEventListener("click", () => {
+          const name = a.label.toUpperCase();
+          if (pinMode) {
+            slots.push({ name, url: "app:" + a.pkg }); store.set("slots", slots); renderSlots();
+            status(name + " PINNED TO QUICK LAUNCH");
+          } else { status("ACCESSING " + name); N.launchApp(a.pkg); }
+        });
+        return b;
+      }));
+    };
+    const loadApps = () => { try { apps = JSON.parse(N.listApps()); } catch { apps = []; } renderApps(); };
+    const homeState = () => {
+      let isHome = false; try { isHome = N.isDefaultHome(); } catch {}
+      $("#homeState").textContent = isHome
+        ? "Galaxy OPS is your home screen."
+        : "Not your home screen yet. Tap below, choose Galaxy OPS, then tap Home.";
+      $("#btnSetHome").textContent = isHome ? "CHANGE HOME SCREEN" : "SET AS HOME SCREEN";
+    };
+    $("#appSearch").addEventListener("input", renderApps);
+    $("#btnPin").addEventListener("click", () => {
+      pinMode = !pinMode;
+      $("#btnPin").textContent = "PIN MODE: " + (pinMode ? "ON" : "OFF");
+      $("#btnPin").classList.toggle("alt", pinMode);
+      status(pinMode ? "TAP AN APP TO PIN IT" : "PIN MODE DISENGAGED");
+    });
+    $("#btnRefreshApps").addEventListener("click", () => { loadApps(); status("DIRECTORY RESCANNED"); });
+    $("#btnSetHome").addEventListener("click", () => N.openHomeSettings());
+    window.onNativeStatus = (m) => status(m, 3500);
+    window.onNativeVoice = (text) => {
+      $("#btnLogVoice").classList.remove("blink");
+      if (!text) return status("NO VOICE INPUT");
+      const ta = $("#logText"); ta.value = (ta.value + " " + text).trim();
+      status("TRANSCRIPTION COMPLETE");
+    };
+    window.onNativeResume = () => { loadApps(); homeState(); };
+    window.onNativeHome = () => show("ops");
+    window.onNativeBack = () => {
+      if ($(".panel.active").id !== "ops") { show("ops"); return true; }
+      return false;
+    };
+    loadApps(); homeState();
+  } else if (store.get("panel", "ops") === "apps") {
+    store.set("panel", "ops");
   }
 
   show(store.get("panel", "ops"));
