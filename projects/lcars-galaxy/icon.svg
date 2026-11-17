@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#000"/>
+  <!-- elbow: top bar + left column with rounded outer and inner corners -->
+  <path d="M176 96H416V148H208A40 40 0 0 0 168 188V416H96V176A80 80 0 0 1 176 96Z" fill="#ff9966"/>
+  <rect x="200" y="196" width="216" height="52" rx="26" fill="#cc99cc"/>
+  <rect x="200" y="268" width="160" height="52" rx="26" fill="#9999ff"/>
+  <rect x="200" y="340" width="216" height="52" rx="26" fill="#ffcc99"/>
+</svg>
