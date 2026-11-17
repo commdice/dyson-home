@@ -6,7 +6,8 @@ PartText, DigitalClock, Group/Variant, BooleanConfiguration, colour themes).
 It is not the real Wear OS renderer, but it validates the XML and gives a
 faithful layout preview.
 
-Usage: render_preview.py <watchface.xml> <out.svg> [theme_id] [--ambient]
+Usage: render_preview.py <watchface.xml> <out.svg> [theme_id] [--ambient] [--t SECONDS]
+  --t sets the moment (seconds past the minute, e.g. 32.4) for animated parts.
 """
 import math
 import re
@@ -19,6 +20,7 @@ SAMPLE = {
     "YEAR": 2026, "DAY_OF_YEAR": 318, "HOUR_0_23": 10,
     "BATTERY_PERCENT": "82", "STEP_COUNT": "6402", "HEART_RATE": "71",
     "HOUR_1_12": "10", "HOUR_0_23_Z": "10", "MINUTE_Z": "08", "SECOND_Z": "32",
+    "MINUTE": 8, "SECOND": 32, "SECOND_MILLISECOND": 32.4,
 }
 # Sample complication text per slotId (weather, unread count, altitude).
 COMPLICATION_SAMPLE = {"0": "12°", "1": "3", "2": "148m"}
@@ -36,6 +38,9 @@ def main():
     src, out = sys.argv[1], sys.argv[2]
     theme = sys.argv[3] if len(sys.argv) > 3 and not sys.argv[3].startswith("--") else None
     ambient = "--ambient" in sys.argv
+    if "--t" in sys.argv:
+        t = float(sys.argv[sys.argv.index("--t") + 1])
+        SAMPLE.update(SECOND_MILLISECOND=t, SECOND=int(t), SECOND_Z=f"{int(t):02d}")
     root = ET.parse(src).getroot()
     W, H = int(root.get("width")), int(root.get("height"))
 
@@ -49,8 +54,9 @@ def main():
 
     def evaluate(expr):
         e = re.sub(r"\[([\w.]+)\]", lambda m: str(SAMPLE[m.group(1)]), expr)
-        if re.search(r"[+\-*/]|floor", e):
-            v = eval(e, {"floor": math.floor})  # WFF maths is floating point
+        if re.search(r"[+\-*/%]|floor|clamp", e):
+            v = eval(e, {"floor": math.floor, "abs": abs,
+                         "clamp": lambda x, lo, hi: max(lo, min(hi, x))})  # WFF maths is floating point
             return f"{v:.3f}".rstrip("0").rstrip(".")  # watch prints <= 3 decimals
         return e
 
@@ -99,11 +105,21 @@ def main():
             elif tag == "PartDraw":
                 if hidden(el):
                     continue
+                part_alpha = 1.0
+                for tr in el.findall("Transform"):
+                    if tr.get("target") == "alpha":
+                        part_alpha = float(evaluate(tr.get("value"))) / 255
                 for shape in el:
                     if shape.find("Fill") is None:
                         continue  # Transform / Variant
                     fill, a = color(shape.find("Fill").get("color"))
+                    a *= part_alpha
+                    if a <= 0:
+                        continue
                     x, y, w, h = (float(shape.get(k)) for k in ("x", "y", "width", "height"))
+                    for tr in shape.findall("Transform"):
+                        if tr.get("target") == "x":
+                            x = float(evaluate(tr.get("value")))
                     x, y = x + ox, y + oy
                     if shape.tag == "Ellipse":
                         parts.append(f'<ellipse cx="{x + w / 2}" cy="{y + h / 2}" rx="{w / 2}" ry="{h / 2}" '

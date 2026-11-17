@@ -2,6 +2,8 @@
 
 ![Themes](docs/showcase.png)
 
+![Console animation](docs/animation.gif)
+
 A starship-console style digital watch face built with **Watch Face Format (WFF)**,
 the declarative format Samsung and Google require for Wear OS 5 (Galaxy Watch 7).
 No app code, so there's no battery drain from background services.
@@ -17,7 +19,8 @@ No app code, so there's no battery drain from background services.
 | Complications | **ATMOS**, **COMMS**, **ALT**: three slots you fill from other apps (see below). Tap one to open its app |
 | Stardate | A fan-style stardate: `(year − 2000) × 1000 + fraction of year`, plus a tenths digit that ticks through the day |
 | Themes | Classic, Blue Alert, Red Alert, Engineering |
-| Always-on | Frame and readouts switch off; only time, date and stardate stay lit (saves battery, avoids burn-in) |
+| Console animation | Chasing lights around the frame, a sensor sweep along the top bar, and register numbers that update every second. Toggle under **Customise → Console animation** |
+| Always-on | Frame, readouts and animation switch off; only time, date and stardate stay lit (saves battery, avoids burn-in) |
 
 Customise it: long-press the watch face → **Customise** → pick a theme / toggle seconds / clock format.
 

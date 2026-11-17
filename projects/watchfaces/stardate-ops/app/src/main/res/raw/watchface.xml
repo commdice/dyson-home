@@ -25,6 +25,7 @@
           colors="#FFFFAA00 #FFFFDD55 #FFCC7722 #FFFFEEBB #FFDD8844" />
     </ColorConfiguration>
     <BooleanConfiguration id="showSeconds" displayName="seconds_label" defaultValue="TRUE" />
+    <BooleanConfiguration id="animate" displayName="animate_label" defaultValue="TRUE" />
     <ListConfiguration id="clockFormat" displayName="clock_label" defaultValue="0">
       <ListOption id="0" displayName="clock_12" />
       <ListOption id="1" displayName="clock_24" />
@@ -112,21 +113,7 @@
         </Rectangle>
       </PartDraw>
 
-      <!-- Decorative register numbers on the left column -->
-      <PartText x="62" y="204" width="34" height="20">
-        <Text align="END">
-          <Font size="14" weight="BOLD" color="#FF000000">
-            <Template>03</Template>
-          </Font>
-        </Text>
-      </PartText>
-      <PartText x="62" y="246" width="34" height="20">
-        <Text align="END">
-          <Font size="14" weight="BOLD" color="#FF000000">
-            <Template>47</Template>
-          </Font>
-        </Text>
-      </PartText>
+      <!-- Static OPS label (numeric registers live in the animation block) -->
       <PartText x="62" y="150" width="34" height="20">
         <Text align="END">
           <Font size="14" weight="BOLD" color="#FF000000">
@@ -135,6 +122,83 @@
         </Text>
       </PartText>
     </Group>
+
+    <!-- ========== CONSOLE ANIMATION (hidden in always-on mode) ==========
+         Driven by [SECOND_MILLISECOND]; every loop divides 60 s so the minute rollover is seamless. -->
+    <BooleanConfiguration id="animate">
+      <BooleanOption id="TRUE">
+        <Group name="console_anim" x="0" y="0" width="450" height="450">
+          <Variant mode="AMBIENT" target="alpha" value="0" />
+          <!-- Chasing lights: one bar segment brightens every 0.5 s, 4 s loop -->
+        <PartDraw x="0" y="0" width="450" height="450">
+          <Transform target="alpha" value="(1 - clamp((floor([SECOND_MILLISECOND] * 2) % 8 - 0) * (floor([SECOND_MILLISECOND] * 2) % 8 - 0), 0, 1)) * 130" />
+          <Rectangle x="164" y="100" width="86" height="18"><Fill color="#FFFFFFFF" /></Rectangle>
+        </PartDraw>
+        <PartDraw x="0" y="0" width="450" height="450">
+          <Transform target="alpha" value="(1 - clamp((floor([SECOND_MILLISECOND] * 2) % 8 - 1) * (floor([SECOND_MILLISECOND] * 2) % 8 - 1), 0, 1)) * 130" />
+          <Rectangle x="254" y="100" width="76" height="18"><Fill color="#FFFFFFFF" /></Rectangle>
+        </PartDraw>
+        <PartDraw x="0" y="0" width="450" height="450">
+          <Transform target="alpha" value="(1 - clamp((floor([SECOND_MILLISECOND] * 2) % 8 - 2) * (floor([SECOND_MILLISECOND] * 2) % 8 - 2), 0, 1)) * 130" />
+          <RoundRectangle x="334" y="100" width="40" height="18" cornerRadiusX="9" cornerRadiusY="9"><Fill color="#FFFFFFFF" /></RoundRectangle>
+        </PartDraw>
+        <PartDraw x="0" y="0" width="450" height="450">
+          <Transform target="alpha" value="(1 - clamp((floor([SECOND_MILLISECOND] * 2) % 8 - 3) * (floor([SECOND_MILLISECOND] * 2) % 8 - 3), 0, 1)) * 130" />
+          <RoundRectangle x="334" y="332" width="40" height="18" cornerRadiusX="9" cornerRadiusY="9"><Fill color="#FFFFFFFF" /></RoundRectangle>
+        </PartDraw>
+        <PartDraw x="0" y="0" width="450" height="450">
+          <Transform target="alpha" value="(1 - clamp((floor([SECOND_MILLISECOND] * 2) % 8 - 4) * (floor([SECOND_MILLISECOND] * 2) % 8 - 4), 0, 1)) * 130" />
+          <Rectangle x="244" y="332" width="86" height="18"><Fill color="#FFFFFFFF" /></Rectangle>
+        </PartDraw>
+        <PartDraw x="0" y="0" width="450" height="450">
+          <Transform target="alpha" value="(1 - clamp((floor([SECOND_MILLISECOND] * 2) % 8 - 5) * (floor([SECOND_MILLISECOND] * 2) % 8 - 5), 0, 1)) * 130" />
+          <Rectangle x="164" y="332" width="76" height="18"><Fill color="#FFFFFFFF" /></Rectangle>
+        </PartDraw>
+        <PartDraw x="0" y="0" width="450" height="450">
+          <Transform target="alpha" value="(1 - clamp((floor([SECOND_MILLISECOND] * 2) % 8 - 6) * (floor([SECOND_MILLISECOND] * 2) % 8 - 6), 0, 1)) * 130" />
+          <Rectangle x="60" y="230" width="40" height="36"><Fill color="#FFFFFFFF" /></Rectangle>
+        </PartDraw>
+        <PartDraw x="0" y="0" width="450" height="450">
+          <Transform target="alpha" value="(1 - clamp((floor([SECOND_MILLISECOND] * 2) % 8 - 7) * (floor([SECOND_MILLISECOND] * 2) % 8 - 7), 0, 1)) * 130" />
+          <Rectangle x="60" y="184" width="40" height="42"><Fill color="#FFFFFFFF" /></Rectangle>
+        </PartDraw>
+          <!-- Sensor sweep along the top bar, 3 s loop -->
+          <PartDraw x="0" y="0" width="450" height="450">
+            <Transform target="alpha" value="170" />
+            <Rectangle x="164" y="103" width="18" height="12">
+              <Transform target="x" value="164 + ([SECOND_MILLISECOND] % 3) / 3 * 192" />
+              <Fill color="#FFFFFFFF" />
+            </Rectangle>
+          </PartDraw>
+          <!-- Live register numbers, change every second -->
+        <PartText x="62" y="204" width="34" height="20">
+          <Text align="END">
+            <Font size="14" weight="BOLD" color="#FF000000"><Template>%s<Parameter expression="([SECOND] * 37 + 3) % 90 + 10" /></Template></Font>
+          </Text>
+        </PartText>
+        <PartText x="62" y="246" width="34" height="20">
+          <Text align="END">
+            <Font size="14" weight="BOLD" color="#FF000000"><Template>%s<Parameter expression="([SECOND] * 53 + [MINUTE] * 7 + 47) % 90 + 10" /></Template></Font>
+          </Text>
+        </PartText>
+        </Group>
+      </BooleanOption>
+      <BooleanOption id="FALSE">
+        <Group name="console_static" x="0" y="0" width="450" height="450">
+          <Variant mode="AMBIENT" target="alpha" value="0" />
+        <PartText x="62" y="204" width="34" height="20">
+          <Text align="END">
+            <Font size="14" weight="BOLD" color="#FF000000"><Template>03</Template></Font>
+          </Text>
+        </PartText>
+        <PartText x="62" y="246" width="34" height="20">
+          <Text align="END">
+            <Font size="14" weight="BOLD" color="#FF000000"><Template>47</Template></Font>
+          </Text>
+        </PartText>
+        </Group>
+      </BooleanOption>
+    </BooleanConfiguration>
 
     <!-- ========== DATE (top) ========== -->
     <PartText x="80" y="58" width="290" height="36">

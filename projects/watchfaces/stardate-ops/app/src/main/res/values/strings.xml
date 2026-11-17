@@ -13,4 +13,5 @@
     <string name="slot_atmos">ATMOS (weather)</string>
     <string name="slot_comms">COMMS (email / notifications)</string>
     <string name="slot_alt">ALT (altimeter)</string>
+    <string name="animate_label">Console animation</string>
 </resources>
