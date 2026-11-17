@@ -118,6 +118,112 @@ def ship_xml():
       </BooleanOption>"""
 
 
+# ------------------------------------------------------- console strips ---
+# Slim LCARS strips above the date and below the stardate, with the same
+# animation as Stardate Ops: chasing lights (8 x 0.5 s = 4 s loop), a sensor
+# sweep along the top strip (3 s loop) and register numbers that tick each second.
+LAVENDER, PERIWINKLE, PEACH = "#FFCC99CC", "#FF9999FF", "#FFFFCC99"
+ACC = "[CONFIGURATION.accent.0]"
+TOP_Y, TOP_H, BOT_Y, BOT_H = 68, 16, 392, 14
+# (x, y, w, h, pill, colour) in chase order: top L->R, then bottom R->L.
+CONSOLE_SEGS = [
+    (112, TOP_Y, 40, TOP_H, True, ACC), (156, TOP_Y, 70, TOP_H, False, LAVENDER),
+    (230, TOP_Y, 70, TOP_H, False, PERIWINKLE), (304, TOP_Y, 40, TOP_H, True, PEACH),
+    (288, BOT_Y, 36, BOT_H, True, ACC), (226, BOT_Y, 58, BOT_H, False, PERIWINKLE),
+    (164, BOT_Y, 58, BOT_H, False, PEACH), (124, BOT_Y, 36, BOT_H, True, LAVENDER),
+]
+SWEEP = (112, 344 - 16, TOP_Y + 3, TOP_H - 6, 3.0)   # x0, x1, y, h, seconds
+REGISTERS = [  # (x, y, w, h, expression) - drawn in black on segments 1 and 2
+    (156, TOP_Y, 66, TOP_H, "([SECOND] * 37 + 3) % 90 + 10"),
+    (230, TOP_Y, 66, TOP_H, "([SECOND] * 53 + [MINUTE] * 7 + 47) % 90 + 10"),
+]
+STATIC_REGISTERS = ["03", "47"]
+
+
+def _shape(tag_x, x, y, w, h, pill, color, extra=""):
+    if pill:
+        r = h / 2
+        return (f'<RoundRectangle x="{x}" y="{y}" width="{w}" height="{h}" cornerRadiusX="{r}" '
+                f'cornerRadiusY="{r}">{extra}<Fill color="{color}" /></RoundRectangle>')
+    return f'<Rectangle x="{x}" y="{y}" width="{w}" height="{h}">{extra}<Fill color="{color}" /></Rectangle>'
+
+
+def _register_xml(x, y, w, h, tpl):
+    return f"""          <PartText x="{x}" y="{y}" width="{w}" height="{h}">
+            <Text align="END">
+              <Font size="12" weight="BOLD" color="#FF000000"><Template>{tpl}</Template></Font>
+            </Text>
+          </PartText>"""
+
+
+def console_xml():
+    static = "\n".join("        " + _shape(None, x, y, w, h, pill, c) for x, y, w, h, pill, c in CONSOLE_SEGS)
+    n = len(CONSOLE_SEGS)
+    chase = []
+    for i, (x, y, w, h, pill, _c) in enumerate(CONSOLE_SEGS):
+        d = f"(floor({T} * 2) % {n} - {i})"
+        chase.append(f"""          <PartDraw x="0" y="0" width="{W}" height="{H}">
+            <Transform target="alpha" value="(1 - clamp({d} * {d}, 0, 1)) * 130" />
+            {_shape(None, x, y, w, h, pill, "#FFFFFFFF")}
+          </PartDraw>""")
+    x0, x1, sy, sh, period = SWEEP
+    sweep = f"""          <PartDraw x="0" y="0" width="{W}" height="{H}">
+            <Transform target="alpha" value="170" />
+            <Rectangle x="{x0}" y="{sy}" width="16" height="{sh}">
+              <Transform target="x" value="{x0} + ({T} % {period:g}) / {period:g} * {x1 - x0}" />
+              <Fill color="#FFFFFFFF" />
+            </Rectangle>
+          </PartDraw>"""
+    live = "\n".join(_register_xml(x, y, w, h, f'%s<Parameter expression="{e}" />') for x, y, w, h, e in REGISTERS)
+    fixed = "\n".join(_register_xml(x, y, w, h, v) for (x, y, w, h, _e), v in zip(REGISTERS, STATIC_REGISTERS))
+    return f"""    <!-- ========== CONSOLE STRIPS (hidden in always-on mode) ========== -->
+    <PartDraw x="0" y="0" width="{W}" height="{H}">
+      <Variant mode="AMBIENT" target="alpha" value="0" />
+{static}
+    </PartDraw>
+    <BooleanConfiguration id="animate">
+      <BooleanOption id="TRUE">
+        <Group name="console_anim" x="0" y="0" width="{W}" height="{H}">
+          <Variant mode="AMBIENT" target="alpha" value="0" />
+{chr(10).join(chase)}
+{sweep}
+{live}
+        </Group>
+      </BooleanOption>
+      <BooleanOption id="FALSE">
+        <Group name="console_static" x="0" y="0" width="{W}" height="{H}">
+          <Variant mode="AMBIENT" target="alpha" value="0" />
+{fixed}
+        </Group>
+      </BooleanOption>
+    </BooleanConfiguration>
+"""
+
+
+def console_svg(t, accent_hex, animate=True):
+    out = []
+    col = lambda c: "#" + (accent_hex[3:] if c == ACC else c[3:])
+    for x, y, w, h, pill, c in CONSOLE_SEGS:
+        out.append(f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="{h / 2 if pill else 0}" fill="{col(c)}"/>')
+    second, minute = int(t), 8
+    if animate:
+        n = len(CONSOLE_SEGS)
+        x, y, w, h, pill, _c = CONSOLE_SEGS[math.floor(t * 2) % n]
+        out.append(f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="{h / 2 if pill else 0}" '
+                   f'fill="#FFFFFF" fill-opacity="{130 / 255:.2f}"/>')
+        x0, x1, sy, sh, period = SWEEP
+        out.append(f'<rect x="{x0 + (t % period) / period * (x1 - x0)}" y="{sy}" width="16" height="{sh}" '
+                   f'fill="#FFFFFF" fill-opacity="{170 / 255:.2f}"/>')
+        values = [str(eval(e.replace("[SECOND]", str(second)).replace("[MINUTE]", str(minute))))
+                  for *_g, e in REGISTERS]
+    else:
+        values = STATIC_REGISTERS
+    font = "font-family=\"'Inter','Liberation Sans',sans-serif\" font-weight=\"700\" text-anchor=\"end\" dominant-baseline=\"central\""
+    for (x, y, w, h, _e), v in zip(REGISTERS, values):
+        out.append(f'<text x="{x + w}" y="{y + h / 2}" font-size="12" fill="#000000" {font}>{v}</text>')
+    return "".join(out)
+
+
 def text_xml(x, y, w, h, size, color, template, ambient_alpha=None, weight="BOLD"):
     variant = (f'\n      <Variant mode="AMBIENT" target="alpha" value="{ambient_alpha}" />'
                if ambient_alpha is not None else "")
@@ -179,6 +285,7 @@ def build_xml():
 {speed_cfg}
     </ListConfiguration>
     <BooleanConfiguration id="showShip" displayName="ship_label" defaultValue="TRUE" />
+    <BooleanConfiguration id="animate" displayName="animate_label" defaultValue="TRUE" />
     <ListConfiguration id="clockFormat" displayName="clock_label" defaultValue="0">
       <ListOption id="0" displayName="clock_12" />
       <ListOption id="1" displayName="clock_24" />
@@ -197,6 +304,7 @@ def build_xml():
 {ship_xml()}
     </BooleanConfiguration>
 
+{console_xml()}
     <!-- ========== TEXT ========== -->
 {text_xml(80, 100, 290, 34, 24, accent, '%s  %s %s<Parameter expression="[DAY_OF_WEEK_S]" /><Parameter expression="[DAY]" /><Parameter expression="[MONTH_S]" />', 170)}
 
@@ -247,6 +355,8 @@ def frame_svg(t, speed_id=DEFAULT_SPEED, accent_id="0", ambient=False, ship=True
                     shapes.append(f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="{r}" {fill}/>')
             parts.append(f'<g transform="translate({gx} {SHIP_Y})">{"".join(shapes)}</g>')
 
+    if not ambient:
+        parts.append(console_svg(t, accent))
     dim = 170 / 255 if ambient else 1
     font = "font-family=\"'Inter','Liberation Sans',sans-serif\" font-weight=\"700\" text-anchor=\"middle\" dominant-baseline=\"central\""
     parts.append(f'<text x="{C}" y="117" font-size="24" fill="{acc}" opacity="{dim:.2f}" {font}>Sat  14 Nov</text>')

@@ -17,8 +17,12 @@ Long-press the face → **Customise**:
 | Accent colour | Ice Blue, Command Gold, Alert Red, Science Teal |
 | Warp speed | Impulse (slow drift), Warp 5, Warp 9 (long streaks) |
 | Starship flyby | On / Off |
+| Console animation | On / Off: chasing lights, a sensor sweep and ticking register numbers on the LCARS strips |
 
-Always-on mode turns off the stars and the ship, leaving the time, date and stardate dimmed, to save battery.
+Slim LCARS console strips above the date and below the stardate carry the same chasing-light
+animation as Stardate Ops.
+
+Always-on mode turns off the stars, the ship and the console strips, leaving the time, date and stardate dimmed, to save battery.
 
 ## Get it on the watch
 

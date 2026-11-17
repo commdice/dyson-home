@@ -25,6 +25,7 @@
         <ListOption id="2" displayName="speed_warp9" />
     </ListConfiguration>
     <BooleanConfiguration id="showShip" displayName="ship_label" defaultValue="TRUE" />
+    <BooleanConfiguration id="animate" displayName="animate_label" defaultValue="TRUE" />
     <ListConfiguration id="clockFormat" displayName="clock_label" defaultValue="0">
       <ListOption id="0" displayName="clock_12" />
       <ListOption id="1" displayName="clock_24" />
@@ -1613,6 +1614,90 @@
           <Rectangle x="204.0" y="314.3" width="3.9" height="3.9"><Fill color="#FFFFF4C0" /></Rectangle>
           <Ellipse x="245.6" y="311.7" width="10.4" height="10.4"><Fill color="#FF99DDFF" /></Ellipse>
           </PartDraw>
+        </Group>
+      </BooleanOption>
+    </BooleanConfiguration>
+
+    <!-- ========== CONSOLE STRIPS (hidden in always-on mode) ========== -->
+    <PartDraw x="0" y="0" width="450" height="450">
+      <Variant mode="AMBIENT" target="alpha" value="0" />
+        <RoundRectangle x="112" y="68" width="40" height="16" cornerRadiusX="8.0" cornerRadiusY="8.0"><Fill color="[CONFIGURATION.accent.0]" /></RoundRectangle>
+        <Rectangle x="156" y="68" width="70" height="16"><Fill color="#FFCC99CC" /></Rectangle>
+        <Rectangle x="230" y="68" width="70" height="16"><Fill color="#FF9999FF" /></Rectangle>
+        <RoundRectangle x="304" y="68" width="40" height="16" cornerRadiusX="8.0" cornerRadiusY="8.0"><Fill color="#FFFFCC99" /></RoundRectangle>
+        <RoundRectangle x="288" y="392" width="36" height="14" cornerRadiusX="7.0" cornerRadiusY="7.0"><Fill color="[CONFIGURATION.accent.0]" /></RoundRectangle>
+        <Rectangle x="226" y="392" width="58" height="14"><Fill color="#FF9999FF" /></Rectangle>
+        <Rectangle x="164" y="392" width="58" height="14"><Fill color="#FFFFCC99" /></Rectangle>
+        <RoundRectangle x="124" y="392" width="36" height="14" cornerRadiusX="7.0" cornerRadiusY="7.0"><Fill color="#FFCC99CC" /></RoundRectangle>
+    </PartDraw>
+    <BooleanConfiguration id="animate">
+      <BooleanOption id="TRUE">
+        <Group name="console_anim" x="0" y="0" width="450" height="450">
+          <Variant mode="AMBIENT" target="alpha" value="0" />
+          <PartDraw x="0" y="0" width="450" height="450">
+            <Transform target="alpha" value="(1 - clamp((floor([SECOND_MILLISECOND] * 2) % 8 - 0) * (floor([SECOND_MILLISECOND] * 2) % 8 - 0), 0, 1)) * 130" />
+            <RoundRectangle x="112" y="68" width="40" height="16" cornerRadiusX="8.0" cornerRadiusY="8.0"><Fill color="#FFFFFFFF" /></RoundRectangle>
+          </PartDraw>
+          <PartDraw x="0" y="0" width="450" height="450">
+            <Transform target="alpha" value="(1 - clamp((floor([SECOND_MILLISECOND] * 2) % 8 - 1) * (floor([SECOND_MILLISECOND] * 2) % 8 - 1), 0, 1)) * 130" />
+            <Rectangle x="156" y="68" width="70" height="16"><Fill color="#FFFFFFFF" /></Rectangle>
+          </PartDraw>
+          <PartDraw x="0" y="0" width="450" height="450">
+            <Transform target="alpha" value="(1 - clamp((floor([SECOND_MILLISECOND] * 2) % 8 - 2) * (floor([SECOND_MILLISECOND] * 2) % 8 - 2), 0, 1)) * 130" />
+            <Rectangle x="230" y="68" width="70" height="16"><Fill color="#FFFFFFFF" /></Rectangle>
+          </PartDraw>
+          <PartDraw x="0" y="0" width="450" height="450">
+            <Transform target="alpha" value="(1 - clamp((floor([SECOND_MILLISECOND] * 2) % 8 - 3) * (floor([SECOND_MILLISECOND] * 2) % 8 - 3), 0, 1)) * 130" />
+            <RoundRectangle x="304" y="68" width="40" height="16" cornerRadiusX="8.0" cornerRadiusY="8.0"><Fill color="#FFFFFFFF" /></RoundRectangle>
+          </PartDraw>
+          <PartDraw x="0" y="0" width="450" height="450">
+            <Transform target="alpha" value="(1 - clamp((floor([SECOND_MILLISECOND] * 2) % 8 - 4) * (floor([SECOND_MILLISECOND] * 2) % 8 - 4), 0, 1)) * 130" />
+            <RoundRectangle x="288" y="392" width="36" height="14" cornerRadiusX="7.0" cornerRadiusY="7.0"><Fill color="#FFFFFFFF" /></RoundRectangle>
+          </PartDraw>
+          <PartDraw x="0" y="0" width="450" height="450">
+            <Transform target="alpha" value="(1 - clamp((floor([SECOND_MILLISECOND] * 2) % 8 - 5) * (floor([SECOND_MILLISECOND] * 2) % 8 - 5), 0, 1)) * 130" />
+            <Rectangle x="226" y="392" width="58" height="14"><Fill color="#FFFFFFFF" /></Rectangle>
+          </PartDraw>
+          <PartDraw x="0" y="0" width="450" height="450">
+            <Transform target="alpha" value="(1 - clamp((floor([SECOND_MILLISECOND] * 2) % 8 - 6) * (floor([SECOND_MILLISECOND] * 2) % 8 - 6), 0, 1)) * 130" />
+            <Rectangle x="164" y="392" width="58" height="14"><Fill color="#FFFFFFFF" /></Rectangle>
+          </PartDraw>
+          <PartDraw x="0" y="0" width="450" height="450">
+            <Transform target="alpha" value="(1 - clamp((floor([SECOND_MILLISECOND] * 2) % 8 - 7) * (floor([SECOND_MILLISECOND] * 2) % 8 - 7), 0, 1)) * 130" />
+            <RoundRectangle x="124" y="392" width="36" height="14" cornerRadiusX="7.0" cornerRadiusY="7.0"><Fill color="#FFFFFFFF" /></RoundRectangle>
+          </PartDraw>
+          <PartDraw x="0" y="0" width="450" height="450">
+            <Transform target="alpha" value="170" />
+            <Rectangle x="112" y="71" width="16" height="10">
+              <Transform target="x" value="112 + ([SECOND_MILLISECOND] % 3) / 3 * 216" />
+              <Fill color="#FFFFFFFF" />
+            </Rectangle>
+          </PartDraw>
+          <PartText x="156" y="68" width="66" height="16">
+            <Text align="END">
+              <Font size="12" weight="BOLD" color="#FF000000"><Template>%s<Parameter expression="([SECOND] * 37 + 3) % 90 + 10" /></Template></Font>
+            </Text>
+          </PartText>
+          <PartText x="230" y="68" width="66" height="16">
+            <Text align="END">
+              <Font size="12" weight="BOLD" color="#FF000000"><Template>%s<Parameter expression="([SECOND] * 53 + [MINUTE] * 7 + 47) % 90 + 10" /></Template></Font>
+            </Text>
+          </PartText>
+        </Group>
+      </BooleanOption>
+      <BooleanOption id="FALSE">
+        <Group name="console_static" x="0" y="0" width="450" height="450">
+          <Variant mode="AMBIENT" target="alpha" value="0" />
+          <PartText x="156" y="68" width="66" height="16">
+            <Text align="END">
+              <Font size="12" weight="BOLD" color="#FF000000"><Template>03</Template></Font>
+            </Text>
+          </PartText>
+          <PartText x="230" y="68" width="66" height="16">
+            <Text align="END">
+              <Font size="12" weight="BOLD" color="#FF000000"><Template>47</Template></Font>
+            </Text>
+          </PartText>
         </Group>
       </BooleanOption>
     </BooleanConfiguration>
