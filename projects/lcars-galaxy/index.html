@@ -121,9 +121,37 @@
   /* ---------- Main ---------- */
   main { min-height: 0; overflow-y: auto; overflow-x: hidden; padding: 10px 2px 10px 6px; scrollbar-width: none; }
   main::-webkit-scrollbar { display: none; }
-  .panel { display: none; animation: boot .35s steps(6); }
+  .panel { display: none; }
   .panel.active { display: block; }
-  @keyframes boot { from { opacity: 0; clip-path: inset(0 0 100% 0); } to { opacity: 1; clip-path: inset(0 0 0 0); } }
+
+  /* ---------- LCARS motion ---------- */
+  @keyframes flash { 0% { filter: brightness(2.3); } 25% { filter: brightness(.65); } 50% { filter: brightness(1.8); } 100% { filter: brightness(1); } }
+  .flash { animation: flash .38s steps(4, end); }
+  @keyframes chase { 0%, 100% { filter: brightness(1); } 40% { filter: brightness(2); } }
+  .chase { animation: chase .3s ease-out; }
+  @keyframes select {
+    0% { filter: brightness(2.6); transform: translateX(8px); }
+    55% { filter: brightness(1.5); transform: translateX(-2px); }
+    100% { filter: brightness(1.25); transform: none; }
+  }
+  .navbtn.select { animation: select .5s cubic-bezier(.2, .8, .2, 1); }
+  @keyframes enter {
+    from { opacity: 0; transform: translateX(-28px); clip-path: inset(0 100% 0 0); }
+    60% { opacity: 1; }
+    to { opacity: 1; transform: none; clip-path: inset(0 0 0 0); }
+  }
+  .enter { animation: enter .34s cubic-bezier(.2, .8, .2, 1) both; }
+  @keyframes tileIn { from { opacity: 0; transform: scaleX(.15); } to { opacity: 1; transform: none; } }
+  .tile.tile-in { transform-origin: right center; animation: tileIn .32s cubic-bezier(.2, .8, .2, 1) both; }
+  @keyframes launch { 0% { filter: brightness(1); } 30% { filter: brightness(2.3); transform: scaleX(1.04); } 100% { filter: brightness(1.2); transform: none; } }
+  .tile.launch { animation: launch .3s ease-out; }
+  .tile.launch::after {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .6), transparent);
+    animation: sweep .3s linear forwards;
+  }
+  @keyframes sweep { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+  .title.typing::after { content: "_"; animation: blink .3s steps(2) infinite; }
 
   h2 { margin: 0 0 8px; font-size: 22px; color: var(--c4); font-weight: 600; display: flex; align-items: center; gap: 8px; }
   h2::after { content: ""; flex: 1; height: 8px; background: var(--c6); border-radius: 999px; }
@@ -358,6 +386,7 @@
       <h2>INTERFACE</h2>
       <div class="toggle">AUDIO CHIRPS <button class="pill" data-toggle="sound" aria-pressed="true">ON</button></div>
       <div class="toggle">HAPTICS <button class="pill" data-toggle="haptics" aria-pressed="true">ON</button></div>
+      <div class="toggle">ANIMATIONS <button class="pill" data-toggle="anim" aria-pressed="true">ON</button></div>
       <div class="toggle">KEEP SCREEN AWAKE <button class="pill" data-toggle="wake" aria-pressed="false">OFF</button></div>
       <h2 style="margin-top:14px">COLOR SCHEME</h2>
       <div class="row">
@@ -413,7 +442,68 @@
     get(k, d) { try { const v = localStorage.getItem("gops:" + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
     set(k, v) { try { localStorage.setItem("gops:" + k, JSON.stringify(v)); } catch {} }
   };
-  const settings = Object.assign({ sound: true, haptics: true, wake: false, theme: "classic" }, store.get("settings", {}));
+  const reduceMotion = (() => { try { return matchMedia("(prefers-reduced-motion: reduce)").matches; } catch { return false; } })();
+  const settings = Object.assign({ sound: true, haptics: true, wake: false, theme: "classic", anim: !reduceMotion }, store.get("settings", {}));
+
+  /* ---------- motion helpers ---------- */
+  function animate(el, cls, delay) {
+    if (!settings.anim || !el) return;
+    const run = () => {
+      el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls);
+      el.addEventListener("animationend", () => el.classList.remove(cls), { once: true });
+    };
+    delay ? setTimeout(run, delay) : run();
+  }
+  function stagger(els, cls, step, max) {
+    els.slice(0, max).forEach((el, i) => {
+      el.style.animationDelay = (i * step) + "ms";
+      el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls);
+      el.addEventListener("animationend", () => { el.classList.remove(cls); el.style.animationDelay = ""; }, { once: true });
+    });
+  }
+  let typeTimer;
+  function typeTitle(text) {
+    const el = document.querySelector("#panelTitle");
+    clearInterval(typeTimer);
+    if (!settings.anim) { el.textContent = text; el.classList.remove("typing"); return; }
+    let i = 0; el.textContent = ""; el.classList.add("typing");
+    typeTimer = setInterval(() => {
+      el.textContent = text.slice(0, ++i);
+      if (i >= text.length) { clearInterval(typeTimer); el.classList.remove("typing"); }
+    }, 40);
+  }
+  function scramble(panel) {
+    if (!settings.anim) return;
+    const chars = "0123456789ABCDEF";
+    panel.querySelectorAll(".stat span").forEach(el => {
+      const final = el.textContent;
+      if (!/[0-9A-Z]/.test(final) || el.dataset.scr) return;
+      el.dataset.scr = "1";
+      let n = 0;
+      const t = setInterval(() => {
+        if (++n > 6) { clearInterval(t); el.textContent = final; delete el.dataset.scr; return; }
+        el.textContent = final.replace(/[0-9A-Z]/g, () => chars[(Math.random() * 16) | 0]);
+      }, 40);
+    });
+  }
+  function clearMotion() {
+    document.querySelectorAll(".enter, .tile-in, .chase, .select").forEach(el => {
+      el.classList.remove("enter", "tile-in", "chase", "select");
+      el.style.animationDelay = "";
+    });
+  }
+  function animatePanel(panel) {
+    clearMotion();
+    if (!settings.anim) return;
+    document.querySelectorAll("#side > *").forEach((el, i) => {
+      if (!el.classList.contains("active")) animate(el, "chase", i * 35);
+    });
+    animate(document.querySelector(".navbtn.active"), "select");
+    document.querySelectorAll(".elbow, .hbar .seg").forEach((el, i) => animate(el, "chase", 80 + i * 30));
+    stagger([...panel.children].filter(c => !c.classList.contains("grid")), "enter", 45, 14);
+    panel.querySelectorAll(".grid").forEach(g => stagger([...g.children], "tile-in", 30, 16));
+    scramble(panel);
+  }
   const saveSettings = () => store.set("settings", settings);
 
   /* ---------- audio chirps ---------- */
@@ -443,7 +533,10 @@
   };
 
   document.addEventListener("pointerdown", (e) => {
-    if (e.target.closest("button, a.tile")) beep();
+    const t = e.target.closest("button, a.tile");
+    if (!t) return;
+    beep();
+    if (!t.classList.contains("navbtn")) animate(t, "flash");
   });
 
   const footer = $("#footStatus");
@@ -458,10 +551,11 @@
   function show(id) {
     $$(".panel").forEach(p => p.classList.toggle("active", p.id === id));
     $$(".navbtn").forEach(b => b.classList.toggle("active", b.dataset.panel === id));
-    $("#panelTitle").textContent = $("#" + id).dataset.title;
+    typeTitle($("#" + id).dataset.title);
     $("#main").scrollTop = 0;
     store.set("panel", id);
     if (id === "systems") refreshSystems();
+    animatePanel($("#" + id));
   }
   $$(".navbtn").forEach(b => b.addEventListener("click", () => show(b.dataset.panel)));
 
@@ -605,7 +699,13 @@
   renderSlots();
   document.addEventListener("click", (e) => {
     const a = e.target.closest("a.tile");
-    if (a) status("ACCESSING " + a.textContent.replace(/^\S+\s*/, "").trim());
+    if (!a) return;
+    status("ACCESSING " + a.textContent.replace(/^\S+\s*/, "").trim());
+    if (!settings.anim) return;
+    e.preventDefault();
+    animate(a, "launch");
+    const href = a.getAttribute("href");
+    setTimeout(() => { location.href = href; }, 260);
   });
   $("#btnAddSlot").addEventListener("click", () => {
     const name = $("#newName").value.trim().toUpperCase(), url = $("#newUrl").value.trim();
@@ -664,6 +764,7 @@
   $$("[data-toggle]").forEach(b => b.addEventListener("click", () => {
     const k = b.dataset.toggle; settings[k] = !settings[k]; saveSettings(); paintToggles();
     if (k === "wake") applyWake();
+    if (k === "anim" && settings.anim) animatePanel($(".panel.active"));
     status(k.toUpperCase() + (settings[k] ? " ENABLED" : " DISABLED"));
   }));
   function applyTheme() {
@@ -785,7 +886,10 @@
           if (pinMode) {
             slots.push({ name, url: "app:" + a.pkg }); store.set("slots", slots); renderSlots();
             status(name + " PINNED TO QUICK LAUNCH");
-          } else { status("ACCESSING " + name); N.launchApp(a.pkg); }
+          } else {
+            status("ACCESSING " + name); animate(b, "launch");
+            setTimeout(() => N.launchApp(a.pkg), settings.anim ? 260 : 0);
+          }
         });
         return b;
       }));
