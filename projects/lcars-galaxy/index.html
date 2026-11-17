@@ -697,9 +697,17 @@
     logs.push({ ts: Date.now(), sd: stardate(new Date()), text }); store.set("logs", logs);
     $("#logText").value = ""; renderLogs(); status("LOG ENTRY RECORDED");
   });
+  let purgeArmed = 0;
   $("#btnLogClear").addEventListener("click", () => {
-    if (!logs.length) return;
-    if (!confirm("Purge all log entries?")) return;
+    const b = $("#btnLogClear");
+    if (!logs.length) return status("ARCHIVE ALREADY EMPTY");
+    if (Date.now() - purgeArmed > 3000) {
+      purgeArmed = Date.now(); b.textContent = "TAP TO CONFIRM"; b.classList.add("blink");
+      status("TAP AGAIN TO PURGE ALL ENTRIES", 3000);
+      setTimeout(() => { b.textContent = "PURGE ALL"; b.classList.remove("blink"); }, 3000);
+      return;
+    }
+    purgeArmed = 0; b.textContent = "PURGE ALL"; b.classList.remove("blink");
     logs = []; store.set("logs", logs); renderLogs(); status("ARCHIVE PURGED");
   });
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
