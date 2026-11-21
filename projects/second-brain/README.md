@@ -37,6 +37,43 @@ npm link                      # optional: puts `brain` on your PATH
 
 The vault lives at `~/SecondBrain` unless you set `BRAIN_VAULT`. Point every platform at the same folder.
 
+## Run it on your NAS (recommended)
+
+A NAS is the natural home: always on, already backed up, reachable from every PC on the network.
+One container holds the memory, and every app connects to it over the LAN.
+
+```
+ PC: Claude Code / Desktop / Cursor / VS Code ─┐
+ Laptop (via Tailscale when away) ─────────────┼──► NAS: second-brain container :7777 ──► /volume1/SecondBrain
+ Scripts, n8n, Home Assistant ─────────────────┘                                      (snapshots + Hyper Backup)
+```
+
+Works with any NAS that runs containers: **Synology** (Container Manager), **QNAP** (Container
+Station), **TrueNAS SCALE**, **Unraid**, or plain Docker.
+
+1. Make a shared folder for the memories, e.g. `/volume1/SecondBrain`.
+2. Copy this project folder to the NAS, e.g. `/volume1/docker/second-brain`.
+3. `cp .env.example .env` and set:
+   - `BRAIN_TOKEN`: a long random string (`openssl rand -hex 32`). This is the password.
+   - `VAULT_DIR`: the folder from step 1.
+   - `PUID` / `PGID`: the NAS user that owns that folder (SSH in and run `id`; on Synology it's often `1026` / `100`).
+   - `BRAIN_PUBLIC_URL`: how your PCs reach the NAS, e.g. `http://192.168.1.20:7777` or `http://nas.local:7777`.
+4. Start it: `docker compose up -d`, or in Synology Container Manager → **Project** → Create → pick the folder.
+5. Check it: open `http://NAS-IP:7777/health` in a browser. It should say `{"ok": true}`.
+
+Then connect each app to `http://NAS-IP:7777/mcp` (configs below). The container restarts by itself,
+reports its health to the NAS, and keeps everything in your shared folder.
+
+**Do / don't on a NAS**
+
+- **Do** snapshot and back up the vault folder (Btrfs snapshots, Hyper Backup, etc.). It's just Markdown files.
+- **Do** browse and edit the vault over SMB from Obsidian or Explorer. The server picks up changes within seconds.
+- **Don't** run the local stdio server on a PC against the vault over an SMB/NFS share. The search index is
+  SQLite, and SQLite over network shares can corrupt it. Let the NAS container be the only process that
+  runs the server, and point apps at its URL.
+- **Don't** forward port 7777 on your router. For access away from home, use **Tailscale** (there's a
+  Synology/QNAP package): your laptop then reaches `http://nas-name:7777` as if it were at home.
+
 ## Memory model
 
 | Field | Meaning |
@@ -66,9 +103,63 @@ without being told each time.
 
 ---
 
-## Connect your platforms
+## Connect your platforms to the NAS
 
-Replace `/ABS/PATH` with the full path to this folder.
+Replace `NAS` with your NAS's address and `TOKEN` with your `BRAIN_TOKEN`. The `source=` part labels
+which app saved each memory.
+
+**Claude Code**
+
+```bash
+claude mcp add --transport http -s user second-brain "http://NAS:7777/mcp?source=claude-code" \
+  --header "Authorization: Bearer TOKEN"
+```
+
+**Cursor** (`~/.cursor/mcp.json`):
+
+```json
+{ "mcpServers": { "second-brain": {
+    "url": "http://NAS:7777/mcp?source=cursor",
+    "headers": { "Authorization": "Bearer TOKEN" } } } }
+```
+
+**VS Code** (`.vscode/mcp.json` or user settings):
+
+```json
+{ "servers": { "second-brain": { "type": "http",
+    "url": "http://NAS:7777/mcp?source=vscode",
+    "headers": { "Authorization": "Bearer TOKEN" } } } }
+```
+
+**Claude Desktop**: its config file only launches local programs, so use the `mcp-remote` bridge
+(needs Node.js on the PC):
+
+```json
+{ "mcpServers": { "second-brain": { "command": "npx",
+    "args": ["-y", "mcp-remote", "http://NAS:7777/mcp?source=claude-desktop&key=TOKEN", "--allow-http"] } } }
+```
+
+**Gemini CLI** (`~/.gemini/settings.json`): `{ "mcpServers": { "second-brain": { "httpUrl": "http://NAS:7777/mcp?source=gemini&key=TOKEN" } } }`
+
+**Codex CLI** (`~/.codex/config.toml`):
+
+```toml
+[mcp_servers.second-brain]
+url = "http://NAS:7777/mcp?source=codex&key=TOKEN"
+```
+
+**Scripts / PowerShell / n8n / Home Assistant**: use the REST API (examples below) at `http://NAS:7777`.
+
+> **claude.ai and ChatGPT on the web or phone are different.** Their connectors call out from
+> Anthropic's and OpenAI's servers, not from your device, so they can't see a NAS that's only on your
+> LAN. Being on Tailscale on your phone doesn't change that. To use them, publish the NAS server with
+> Cloudflare Tunnel or Tailscale Funnel (see "Web and phone apps" below). Otherwise, use the desktop and
+> CLI apps above, which reach the NAS directly.
+
+## Connect your platforms without a NAS (single PC)
+
+If everything runs on one computer, apps can start the server themselves over stdio. Replace
+`/ABS/PATH` with the full path to this folder.
 
 ### Claude Code
 

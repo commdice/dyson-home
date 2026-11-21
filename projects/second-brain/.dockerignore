@@ -1,3 +1,5 @@
 node_modules
 .brain
 test
+.env
+vault

@@ -1,0 +1,26 @@
+# Second Brain on a NAS (Synology Container Manager, QNAP Container Station,
+# TrueNAS SCALE, Unraid, or any Docker host).
+#   1. Copy this folder to the NAS, e.g. /volume1/docker/second-brain
+#   2. cp .env.example .env   and set BRAIN_TOKEN (openssl rand -hex 32)
+#   3. docker compose up -d   (or create a "Project" from this file in the NAS GUI)
+services:
+  second-brain:
+    build: .
+    image: second-brain:latest
+    container_name: second-brain
+    restart: unless-stopped
+    ports:
+      - "${BRAIN_PORT:-7777}:7777"
+    environment:
+      BRAIN_TOKEN: ${BRAIN_TOKEN:?Set BRAIN_TOKEN in .env}
+      BRAIN_PUBLIC_URL: ${BRAIN_PUBLIC_URL:-http://nas.local:7777}
+      TZ: ${TZ:-UTC}
+    # Run as the NAS user that owns the vault folder (Synology: `id` over SSH, often 1026:100).
+    user: "${PUID:-1000}:${PGID:-1000}"
+    volumes:
+      - ${VAULT_DIR:-./vault}:/vault
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:7777/health"]
+      interval: 60s
+      timeout: 5s
+      retries: 3
