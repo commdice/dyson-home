@@ -9,6 +9,7 @@ import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/
 import { openBrain } from './store.js';
 import { createMcpServer } from './mcp.js';
 import { openapi } from './openapi.js';
+import { recall, remember, related, stats, context } from './semantic.js';
 
 const HOST = process.env.BRAIN_HOST || '127.0.0.1';
 const PORT = Number(process.env.BRAIN_PORT || 7777);
@@ -21,7 +22,7 @@ if (!TOKEN && !LOCAL) {
   process.exit(1);
 }
 
-const brain = openBrain();
+const brain = await openBrain();
 
 function authorized(req, url) {
   if (!TOKEN) return true;
@@ -59,7 +60,7 @@ async function route(req, res) {
   const q = Object.fromEntries(url.searchParams);
 
   if (req.method === 'OPTIONS') return send(res, 204);
-  if (p === '/health') return send(res, 200, { ok: true });
+  if (p === '/health') return send(res, 200, { ok: true, semantic: brain.semantic ? brain.semantic.state : 'off' });
   if (p === '/openapi.json') return send(res, 200, openapi(PUBLIC_URL));
   if (!authorized(req, url)) return send(res, 401, { error: 'unauthorized' });
 
@@ -79,21 +80,25 @@ async function route(req, res) {
   const m = p.match(/^\/memories\/([^/]+)(\/related)?$/);
 
   if (p === '/memories' && req.method === 'GET')
-    return send(res, 200, brain.search({ query: q.q || '', type: q.type, tags: list(q.tags), source: q.source, since: q.since, limit: q.limit }));
+    return send(res, 200, await recall(brain, { query: q.q || '', type: q.type, tags: list(q.tags), source: q.source, since: q.since, limit: q.limit }));
   if (p === '/memories' && req.method === 'POST') {
     const b = await readJson(req);
-    return send(res, 201, brain.remember({ ...b, source: b.source || source || 'api' }));
+    return send(res, 201, await remember(brain, { ...b, source: b.source || source || 'api' }));
   }
-  if (m && m[2] && req.method === 'GET') return send(res, 200, brain.related(decodeURIComponent(m[1]), q.limit));
+  if (m && m[2] && req.method === 'GET') return send(res, 200, related(brain, decodeURIComponent(m[1]), q.limit));
   if (m && req.method === 'GET') {
     const mem = brain.get(decodeURIComponent(m[1]));
     return mem ? send(res, 200, mem) : send(res, 404, { error: 'not found' });
   }
   if (m && req.method === 'PATCH') return send(res, 200, brain.update(decodeURIComponent(m[1]), await readJson(req)));
   if (m && req.method === 'DELETE') return send(res, 200, brain.forget(decodeURIComponent(m[1])));
-  if (p === '/context' && req.method === 'GET') return send(res, 200, brain.context({ topic: q.topic, limit: q.limit }));
-  if (p === '/stats' && req.method === 'GET') return send(res, 200, brain.stats());
-  if (p === '/reindex' && req.method === 'POST') return send(res, 200, brain.reindex());
+  if (p === '/context' && req.method === 'GET') return send(res, 200, await context(brain, { topic: q.topic, limit: q.limit }));
+  if (p === '/stats' && req.method === 'GET') return send(res, 200, stats(brain));
+  if (p === '/reindex' && req.method === 'POST') {
+    const out = brain.reindex();
+    if (brain.semantic) brain.semantic.run();
+    return send(res, 200, out);
+  }
 
   return send(res, 404, { error: 'no such route', see: '/openapi.json' });
 }
@@ -110,5 +115,6 @@ http
   })
   .listen(PORT, HOST, () => {
     console.error(`second-brain HTTP on ${PUBLIC_URL}  (MCP: /mcp, REST: /memories, spec: /openapi.json)  vault: ${brain.vault}`);
+    console.error(brain.semantic ? `semantic search: on, ${brain.semantic.model} via ${brain.semantic.url}` : 'semantic search: off (set OLLAMA_URL to enable)');
     if (!TOKEN) console.error('No BRAIN_TOKEN set: open to anything on this machine. Set one before exposing it.');
   });

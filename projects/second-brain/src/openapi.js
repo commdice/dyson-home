@@ -28,9 +28,9 @@ export const openapi = (url) => ({
   paths: {
     '/memories': {
       get: {
-        operationId: 'recall', summary: 'Search memories (empty q = most recent)',
+        operationId: 'recall', summary: 'Search memories by meaning and keywords (empty q = most recent)',
         parameters: [
-          { name: 'q', in: 'query', schema: { type: 'string' } },
+          { name: 'q', in: 'query', schema: { type: 'string' }, description: 'What to look for, in plain words or a question' },
           { name: 'type', in: 'query', schema: { type: 'string', enum: TYPES } },
           { name: 'tags', in: 'query', schema: { type: 'string' }, description: 'Comma-separated; all must match' },
           { name: 'source', in: 'query', schema: { type: 'string' } },
@@ -81,6 +81,6 @@ export const openapi = (url) => ({
         parameters: [{ name: 'topic', in: 'query', schema: { type: 'string' } }], responses: ok(),
       },
     },
-    '/stats': { get: { operationId: 'stats', summary: 'Counts by type, source, tag', responses: ok() } },
+    '/stats': { get: { operationId: 'stats', summary: 'Counts by type, source, tag; semantic search status', responses: ok() } },
   },
 });

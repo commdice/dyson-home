@@ -81,6 +81,7 @@ export class Brain {
       );
     `);
     this.lastSync = 0;
+    this.onChange = null; // set by the semantic layer to hear about new or changed memories
     this.sync(true);
   }
 
@@ -100,6 +101,7 @@ export class Brain {
     this.lastSync = Date.now();
     const known = new Map(this.db.prepare('SELECT path, mtime FROM memories').all().map((r) => [r.path, r.mtime]));
     const seen = new Set();
+    let changed = false;
     this.db.exec('BEGIN');
     try {
       for (const file of this.walk()) {
@@ -110,13 +112,15 @@ export class Brain {
         const mem = parse(fs.readFileSync(file, 'utf8'));
         if (!mem || !mem.id) continue; // not a brain memory (e.g. a hand-written note without front matter)
         this.indexRow({ ...mem, path: rel }, mtime);
+        changed = true;
       }
-      for (const rel of known.keys()) if (!seen.has(rel)) this.unindexPath(rel);
+      for (const rel of known.keys()) if (!seen.has(rel)) { this.unindexPath(rel); changed = true; }
       this.db.exec('COMMIT');
     } catch (e) {
       this.db.exec('ROLLBACK');
       throw e;
     }
+    if (changed) this.onChange?.();
   }
 
   indexRow(m, mtime) {
@@ -179,6 +183,7 @@ export class Brain {
     fs.renameSync(tmp, abs); // atomic replace
     if (oldRel && oldRel !== rel) fs.rmSync(path.join(this.vault, oldRel), { force: true });
     this.indexRow({ ...mem, path: rel }, fs.statSync(abs).mtimeMs);
+    this.onChange?.();
     return rel;
   }
 
@@ -247,16 +252,21 @@ export class Brain {
     return { forgotten: r.id, title: r.title, recoverable_at: path.join('.trash', path.basename(r.path)) };
   }
 
-  search({ query = '', type, tags, source, since, limit = 10 } = {}) {
-    this.sync();
-    limit = Math.min(100, Math.max(1, Number(limit) || 10));
+  // SQL fragment (against alias m) for the optional search filters.
+  filterSql({ type, tags, source, since } = {}) {
     const where = [];
     const args = [];
     if (type) { where.push('m.type = ?'); args.push(type); }
     if (source) { where.push('m.source = ?'); args.push(source); }
     if (since) { where.push('m.updated >= ?'); args.push(since); }
     for (const t of normTags(tags)) { where.push('EXISTS (SELECT 1 FROM json_each(m.tags) WHERE value = ?)'); args.push(t); }
-    const filter = where.length ? ' AND ' + where.join(' AND ') : '';
+    return { filter: where.length ? ' AND ' + where.join(' AND ') : '', args };
+  }
+
+  search({ query = '', type, tags, source, since, limit = 10 } = {}) {
+    this.sync();
+    limit = Math.min(100, Math.max(1, Number(limit) || 10));
+    const { filter, args } = this.filterSql({ type, tags, source, since });
 
     if (!query.trim()) {
       const rows = this.db.prepare(`SELECT m.* FROM memories m WHERE 1=1${filter} ORDER BY m.updated DESC LIMIT ?`).all(...args, limit);
@@ -317,7 +327,17 @@ export class Brain {
   }
 }
 
-export function openBrain() {
+export async function openBrain({ background = true } = {}) {
   const vault = process.env.BRAIN_VAULT || path.join(process.env.HOME || process.cwd(), 'SecondBrain');
-  return new Brain(vault);
+  const brain = new Brain(vault);
+  if (process.env.OLLAMA_URL) {
+    const { Semantic } = await import('./semantic.js');
+    brain.semantic = new Semantic(brain, {
+      url: process.env.OLLAMA_URL,
+      model: process.env.BRAIN_EMBED_MODEL,
+      minSimilarity: process.env.BRAIN_MIN_SIMILARITY,
+      background,
+    });
+  }
+  return brain;
 }

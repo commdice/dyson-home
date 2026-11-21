@@ -12,7 +12,7 @@
   "scripts": {
     "mcp": "node --no-warnings src/stdio.js",
     "serve": "node --no-warnings src/http.js",
-    "test": "node --no-warnings --test test/*.test.js"
+    "test": "node --no-warnings --test --test-concurrency=1 test/*.test.js"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.2",

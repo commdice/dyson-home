@@ -17,8 +17,9 @@ Cursor, Gemini or a shell script can use it on Tuesday.
 
 - **Your data is plain files.** One Markdown file per memory, with front matter. Readable without this
   software, opens as an Obsidian vault, backs up with git/OneDrive/Syncthing. No vendor lock-in.
-- **Search is SQLite FTS5** (built into Node 22, BM25 ranking, stemming, prefix match), boosted by
-  importance, pinning and recency. Delete `.brain/` any time and it rebuilds from the files.
+- **Search by meaning and by keywords.** Keyword search is SQLite FTS5 (built into Node 22, BM25
+  ranking, stemming, prefix match). Add Ollama and it also finds memories by meaning: "what do we drive?"
+  finds "Shop van is a Ford Transit". Delete `.brain/` any time and it rebuilds from the files.
 - **Hand edits are picked up.** Edit a file in Obsidian or add one; every interface sees it within ~2 s.
 - **Nothing is ever lost to an over-eager AI**: `forget` moves files to `.trash/`.
 - **Every memory records which assistant saved it** (`source`), so you can see who wrote what.
@@ -31,7 +32,7 @@ Needs Node.js 22.13 or newer.
 ```bash
 cd projects/second-brain
 npm install
-npm test                      # 9 tests: store, REST, MCP over HTTP and stdio
+npm test                      # 18 tests: store, semantic search, REST, MCP over HTTP and stdio
 npm link                      # optional: puts `brain` on your PATH
 ```
 
@@ -61,7 +62,8 @@ Station), **TrueNAS SCALE**, **Unraid**, or plain Docker.
 4. Start it: `docker compose up -d`, or in Synology Container Manager → **Project** → Create → pick the folder.
 5. Check it: open `http://NAS-IP:7777/health` in a browser. It should say `{"ok": true}`.
 
-Then connect each app to `http://NAS-IP:7777/mcp` (configs below). The container restarts by itself,
+Then connect each app to `http://NAS-IP:7777/mcp` (configs below). The same compose file also starts
+Ollama for [semantic search](#semantic-search-ollama). The first start downloads a ~270 MB model. The container restarts by itself,
 reports its health to the NAS, and keeps everything in your shared folder.
 
 **Do / don't on a NAS**
@@ -102,6 +104,71 @@ The MCP server also sends assistants instructions on *when* to recall and rememb
 without being told each time.
 
 ---
+
+## Semantic search (Ollama)
+
+Keyword search only finds memories that share words with your question. Semantic search finds them by
+**meaning**, using an embedding model running in Ollama on your NAS. Nothing leaves your network.
+
+| You ask | Keyword search | With semantic search |
+|---|---|---|
+| "what vehicle do we have?" | nothing | **Shop van**: 2019 Ford Transit… |
+| "how is the data protected?" | nothing | **Synology backups**: nightly to Hyper Backup… |
+| "Ford Transit" | **Shop van** | **Shop van** (matched both ways, ranked first) |
+
+**How it works**
+
+- Every memory is turned into a vector (a list of numbers that captures its meaning) by Ollama and stored
+  in the index. This happens in the background, so saving a memory never waits for Ollama.
+- A search runs both ways at once and merges the two rankings (Reciprocal Rank Fusion). Results say how
+  they matched (`match: keyword | meaning | both`) with a `similarity` score.
+- `remember` also flags duplicates by meaning ("Backups go to the Synology nightly" vs "Nightly snapshot
+  copies are stored on the NAS"), and `related` lists memories with similar meaning.
+- Only new or changed memories are re-embedded. Change the model and everything is re-embedded automatically.
+- **If Ollama is down, slow or still downloading, nothing breaks**: search falls back to keywords and says
+  so (`"semantic": "unavailable (…); keyword results only"`), and embedding catches up when it's back.
+
+**Setup**: it's already in `docker-compose.yml`. On first start, second-brain asks Ollama to download
+the model, then embeds all your memories. Check progress:
+
+```bash
+curl -H "Authorization: Bearer TOKEN" http://NAS:7777/stats     # → "semantic": { "state": "idle", "embedded": 120, "total": 120 }
+curl http://NAS:7777/health                                      # → { "ok": true, "semantic": "idle" }
+```
+
+`state` is `pulling` (downloading the model), `embedding`, `idle` (all done), or `error` (see `lastError`;
+a failed download is retried every 10 minutes).
+
+**Choosing a model** (`BRAIN_EMBED_MODEL` in `.env`):
+
+| Model | Size | Good for |
+|---|---|---|
+| `nomic-embed-text` *(default)* | ~270 MB | English, fast on NAS CPUs (Celeron/Atom/Ryzen) |
+| `mxbai-embed-large` | ~670 MB | More accurate English, slower |
+| `bge-m3` | ~1.2 GB | Many languages, long notes |
+| `embeddinggemma` | ~620 MB | Good all-rounder, multilingual |
+
+**What to expect on a NAS** (rough estimates, not measured on your hardware): no GPU is needed. On a
+typical 4-core NAS CPU, `nomic-embed-text` should embed somewhere around 5–20 memories a second the first time (a few thousand memories takes minutes, once), and a
+search adds well under a second once the model is loaded. Ollama keeps the model in RAM for 30 minutes
+after use (about 0.5 GB with the default model), so the first search after a quiet spell is a few
+seconds slower. If the NAS has 4 GB of RAM or less, keep the default model.
+
+**Tuning**
+
+| Variable | Default | |
+|---|---|---|
+| `OLLAMA_URL` | `http://ollama:11434` in compose; unset elsewhere | Where Ollama is. Empty = semantic search off |
+| `BRAIN_EMBED_MODEL` | `nomic-embed-text` | Any Ollama embedding model |
+| `BRAIN_MIN_SIMILARITY` | `0.5` | Drop meaning matches below this (0–1). Lower = more, looser results |
+| `BRAIN_QUERY_TIMEOUT_MS` | `10000` | How long a search waits for Ollama before using keywords only |
+
+**Already run Ollama** (on the NAS, a gaming PC with a GPU, OpenJarvis…)? Set `OLLAMA_URL` in `.env`
+to it and delete the `ollama` service from `docker-compose.yml`. Note that Ollama has no password, so
+don't publish its port beyond your LAN.
+
+**CLI**: `OLLAMA_URL=http://NAS:11434 brain embed` embeds anything missing and waits for a model
+download if needed. `brain search` shows `~meaning` next to results found by meaning.
 
 ## Connect your platforms to the NAS
 
@@ -267,6 +334,7 @@ vault folder (Syncthing, git, OneDrive) or point local apps at the HTTP `/mcp` U
 | `BRAIN_HOST` / `BRAIN_PORT` | `127.0.0.1` / `7777` | HTTP bind address |
 | `BRAIN_TOKEN` | *(none)* | Required for non-local binding. Bearer header, `X-API-Key`, or `?key=` |
 | `BRAIN_PUBLIC_URL` | `http://host:port` | URL written into `/openapi.json` |
+| `OLLAMA_URL`, `BRAIN_EMBED_MODEL`, … | | See [Semantic search](#semantic-search-ollama) |
 
 ## Security notes
 
@@ -278,6 +346,5 @@ vault folder (Syncthing, git, OneDrive) or point local apps at the HTTP `/mcp` U
 
 ## Roadmap ideas
 
-- Semantic (embedding) search alongside keywords — e.g. via a local Ollama model or OpenJarvis
 - OAuth for the remote MCP endpoint instead of a URL key
 - Scheduled "consolidation" that merges duplicate memories and summarises journals

@@ -1,8 +1,10 @@
-# Second Brain on a NAS (Synology Container Manager, QNAP Container Station,
+# Second Brain + Ollama on a NAS (Synology Container Manager, QNAP Container Station,
 # TrueNAS SCALE, Unraid, or any Docker host).
 #   1. Copy this folder to the NAS, e.g. /volume1/docker/second-brain
 #   2. cp .env.example .env   and set BRAIN_TOKEN (openssl rand -hex 32)
 #   3. docker compose up -d   (or create a "Project" from this file in the NAS GUI)
+# On first start the embedding model (~270 MB) is downloaded into Ollama automatically.
+# Already run Ollama somewhere? Set OLLAMA_URL in .env and delete the `ollama` service below.
 services:
   second-brain:
     build: .
@@ -14,6 +16,9 @@ services:
     environment:
       BRAIN_TOKEN: ${BRAIN_TOKEN:?Set BRAIN_TOKEN in .env}
       BRAIN_PUBLIC_URL: ${BRAIN_PUBLIC_URL:-http://nas.local:7777}
+      # Semantic search. Leave OLLAMA_URL empty to turn it off (keyword search only).
+      OLLAMA_URL: ${OLLAMA_URL-http://ollama:11434}
+      BRAIN_EMBED_MODEL: ${BRAIN_EMBED_MODEL:-nomic-embed-text}
       TZ: ${TZ:-UTC}
     # Run as the NAS user that owns the vault folder (Synology: `id` over SSH, often 1026:100).
     user: "${PUID:-1000}:${PGID:-1000}"
@@ -24,3 +29,22 @@ services:
       interval: 60s
       timeout: 5s
       retries: 3
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: second-brain-ollama
+    restart: unless-stopped
+    environment:
+      OLLAMA_KEEP_ALIVE: 30m        # keep the model in RAM between searches
+      OLLAMA_MAX_LOADED_MODELS: 1
+    volumes:
+      - ${OLLAMA_DIR:-./ollama}:/root/.ollama
+    # Ollama has no password, so it is NOT published to the network by default; second-brain
+    # reaches it on the internal Docker network. Uncomment only if other LAN apps need it.
+    # ports:
+    #   - "11434:11434"
+    # NVIDIA GPU (TrueNAS/Unraid with nvidia runtime): uncomment for faster embedding.
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices: [{ driver: nvidia, count: all, capabilities: [gpu] }]

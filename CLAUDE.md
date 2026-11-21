@@ -10,7 +10,7 @@ This is a monorepo containing three independent AI/agent projects plus a subproj
 - **space-agent** — Browser-first AI agent with Node.js server (JavaScript/Vue)
 - **OpenJarvis** — Personal AI framework for on-device LLMs (Python + Rust extensions)
 - **projects/claude/smart-connections-mcp** — MCP server for Obsidian Smart Connections (TypeScript/Node.js)
-- **projects/second-brain** — Shared AI memory: Markdown vault + SQLite FTS5, exposed via MCP (stdio/HTTP), REST/OpenAPI and CLI (Node.js 22, plain ESM)
+- **projects/second-brain** — Shared AI memory: Markdown vault + SQLite FTS5 + optional Ollama semantic search, exposed via MCP (stdio/HTTP), REST/OpenAPI and CLI (Node.js 22, plain ESM)
 
 Each project is fully independent with its own toolchain.
 
@@ -121,7 +121,7 @@ Personal long-term memory shared by many AI platforms. Markdown files in a vault
 ```bash
 cd projects/second-brain
 npm install
-npm test                 # node:test — store, REST, MCP over HTTP + stdio
+npm test                 # node:test — store, semantic (fake Ollama in test/fake-ollama.js), REST, MCP
 npm run mcp              # stdio MCP server
 npm run serve            # HTTP: /mcp, /memories REST, /openapi.json
 ./src/cli.js --help      # CLI
@@ -129,6 +129,7 @@ npm run serve            # HTTP: /mcp, /memories REST, /openapi.json
 
 ### Architecture
 - `src/store.js` — `Brain` class: vault I/O, front matter (JSON values), index sync, search/ranking
+- `src/semantic.js` — optional Ollama embeddings (enabled by `OLLAMA_URL`): background indexing, hybrid keyword+vector recall (RRF), keyword fallback; interfaces call its `recall/remember/related/context/stats` helpers
 - `src/mcp.js` — MCP tool definitions shared by stdio and HTTP
 - `src/stdio.js`, `src/http.js`, `src/cli.js` — entry points; `src/openapi.js` — REST spec
 

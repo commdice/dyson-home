@@ -4,6 +4,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { TYPES } from './store.js';
+import { recall, remember, related, stats, context } from './semantic.js';
 
 const INSTRUCTIONS = `This is the user's Second Brain: long-term memory shared across every AI assistant they use.
 - At the start of a conversation, call brain_context (optionally with a topic) to load who the user is and what they care about.
@@ -32,20 +33,20 @@ export function createMcpServer(brain, { defaultSource } = {}) {
       pinned: z.boolean().optional().describe('Always include in brain_context'),
       source: z.string().optional().describe('Which assistant/app is saving this; filled in automatically if omitted'),
     },
-  }, wrap((a) => brain.remember({ ...a, source: sourceOf(a.source) })));
+  }, wrap((a) => remember(brain, { ...a, source: sourceOf(a.source) })));
 
   server.registerTool('brain_recall', {
     title: 'Recall',
-    description: 'Search memories by keywords, with optional filters. Returns ranked snippets; use brain_get for the full text.',
+    description: 'Search memories with optional filters. Matches by meaning as well as keywords when semantic search is enabled, so describe what you are looking for in plain words. Returns ranked snippets; use brain_get for the full text.',
     inputSchema: {
-      query: z.string().optional().describe('Keywords; empty returns most recent'),
+      query: z.string().optional().describe('What to look for, in words or a question; empty returns most recent'),
       type: z.enum(TYPES).optional(),
       tags: z.array(z.string()).optional().describe('All of these tags must match'),
       source: z.string().optional(),
       since: z.string().optional().describe('ISO date; only memories updated on/after it'),
       limit: z.number().int().min(1).max(100).optional(),
     },
-  }, wrap((a) => brain.search(a)));
+  }, wrap((a) => recall(brain, a)));
 
   server.registerTool('brain_get', {
     title: 'Get memory',
@@ -80,19 +81,19 @@ export function createMcpServer(brain, { defaultSource } = {}) {
     title: 'Related memories',
     description: 'Memories linked to, linked from, or similar to a given memory.',
     inputSchema: { id: z.string(), limit: z.number().int().min(1).max(50).optional() },
-  }, wrap(({ id, limit }) => brain.related(id, limit)));
+  }, wrap(({ id, limit }) => related(brain, id, limit)));
 
   server.registerTool('brain_context', {
     title: 'Load context',
     description: 'Call at the start of a conversation: pinned memories and key preferences in full, recent memories, and optionally memories about a topic.',
     inputSchema: { topic: z.string().optional(), limit: z.number().int().min(1).max(50).optional() },
-  }, wrap((a) => brain.context(a)));
+  }, wrap((a) => context(brain, a)));
 
   server.registerTool('brain_stats', {
     title: 'Brain stats',
-    description: 'Counts by type, source and top tags.',
+    description: 'Counts by type, source and top tags, plus semantic search status.',
     inputSchema: {},
-  }, wrap(() => brain.stats()));
+  }, wrap(() => stats(brain)));
 
   return server;
 }
