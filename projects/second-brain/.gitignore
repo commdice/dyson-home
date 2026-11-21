@@ -1,0 +1,5 @@
+node_modules/
+.brain/
+.env
+vault/
+ollama/
