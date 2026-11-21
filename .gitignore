@@ -20,6 +20,10 @@
 !projects/claude/
 !projects/claude/smart-connections-mcp/
 
+# Regular (non-submodule) projects
+!projects/second-brain/
+!projects/second-brain/**
+
 # Tool/cache dirs to keep ignored even if whitelisted above
 .cache/
 .cargo/

@@ -10,6 +10,7 @@ This is a monorepo containing three independent AI/agent projects plus a subproj
 - **space-agent** — Browser-first AI agent with Node.js server (JavaScript/Vue)
 - **OpenJarvis** — Personal AI framework for on-device LLMs (Python + Rust extensions)
 - **projects/claude/smart-connections-mcp** — MCP server for Obsidian Smart Connections (TypeScript/Node.js)
+- **projects/second-brain** — Shared AI memory: Markdown vault + SQLite FTS5, exposed via MCP (stdio/HTTP), REST/OpenAPI and CLI (Node.js 22, plain ESM)
 
 Each project is fully independent with its own toolchain.
 
@@ -112,6 +113,27 @@ tsc --noEmit             # type check
 
 ---
 
+## projects/second-brain
+
+Personal long-term memory shared by many AI platforms. Markdown files in a vault are the source of truth; `<vault>/.brain/index.db` is a rebuildable FTS5 index (uses built-in `node:sqlite`, Node >= 22.13).
+
+### Commands
+```bash
+cd projects/second-brain
+npm install
+npm test                 # node:test — store, REST, MCP over HTTP + stdio
+npm run mcp              # stdio MCP server
+npm run serve            # HTTP: /mcp, /memories REST, /openapi.json
+./src/cli.js --help      # CLI
+```
+
+### Architecture
+- `src/store.js` — `Brain` class: vault I/O, front matter (JSON values), index sync, search/ranking
+- `src/mcp.js` — MCP tool definitions shared by stdio and HTTP
+- `src/stdio.js`, `src/http.js`, `src/cli.js` — entry points; `src/openapi.js` — REST spec
+
+---
+
 ## Toolchain Quick Reference
 
 | Project | Package Manager | Runtime |
@@ -120,3 +142,4 @@ tsc --noEmit             # type check
 | space-agent | npm       | Node.js 20+ |
 | OpenJarvis  | uv + Cargo | Python 3.10+ |
 | smart-connections-mcp | npm | Node.js |
+| second-brain | npm | Node.js 22.13+ |
