@@ -1,0 +1,6 @@
+out/
+__pycache__/
+.venv/
+# third-party icons are downloaded by fetch_icons.py, only the own glyphs are in the repo
+icons/*
+!icons/glyph-*.svg

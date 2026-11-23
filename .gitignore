@@ -20,7 +20,9 @@
 !projects/claude/
 !projects/claude/smart-connections-mcp/
 
-# Regular (non-submodule) projects
+# In-tree projects (not submodules)
+!projects/homelab-diagram/
+!projects/homelab-diagram/**
 !projects/google-reviews/
 !projects/google-reviews/**
 

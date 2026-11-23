@@ -1,0 +1,15 @@
+[project]
+name = "homelab-diagram"
+version = "0.1.0"
+description = "Render a homelab network diagram from a YAML inventory as SVG/PNG"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+dependencies = [
+    "pyyaml>=6.0",
+    "pillow>=9.0",
+]
+
+# This repository is a pair of scripts, not an importable package.
+[tool.uv]
+package = false
