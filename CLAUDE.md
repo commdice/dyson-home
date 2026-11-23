@@ -151,6 +151,20 @@ uv run build.py --unredacted
 
 ---
 
+## projects/google-reviews
+
+Policy-compliant Google review automation (`reviewbot`): review requests, review monitoring, Claude-drafted replies with human approval. Python + SQLite, stdlib only (optional `anthropic`).
+
+### Commands
+```bash
+cd projects/google-reviews
+uv sync --extra ai --extra dev
+uv run pytest -q
+uv run reviewbot --help
+```
+
+---
+
 ## Toolchain Quick Reference
 
 | Project | Package Manager | Runtime |
@@ -161,3 +175,4 @@ uv run build.py --unredacted
 | smart-connections-mcp | npm | Node.js |
 | second-brain | npm | Node.js 22.13+ |
 | homelab-diagram | uv | Python 3.11+ |
+| google-reviews | uv | Python 3.10+ |
