@@ -11,6 +11,7 @@ This is a monorepo containing three independent AI/agent projects plus a subproj
 - **OpenJarvis** — Personal AI framework for on-device LLMs (Python + Rust extensions)
 - **projects/claude/smart-connections-mcp** — MCP server for Obsidian Smart Connections (TypeScript/Node.js)
 - **projects/second-brain** — Shared AI memory: Markdown vault + SQLite FTS5 + optional Ollama semantic search, exposed via MCP (stdio/HTTP), REST/OpenAPI and CLI (Node.js 22, plain ESM)
+- **projects/homelab-diagram** — r/homelab-style network diagram generator, YAML → SVG/PNG (Python; fork of Goblinmine/homelab-diagram)
 
 Each project is fully independent with its own toolchain.
 
@@ -135,6 +136,21 @@ npm run serve            # HTTP: /mcp, /memories REST, /openapi.json
 
 ---
 
+## projects/homelab-diagram
+
+Renders a homelab network diagram from `inventory.yaml`; layout is hand-placed in `build.py`. Has its own `CLAUDE.md` with the adaptation workflow. Needs `rsvg-convert` (librsvg) and the Fira Sans / Fira Code fonts.
+
+### Commands
+```bash
+cd projects/homelab-diagram
+uv sync                    # PyYAML + Pillow
+uv run fetch_icons.py      # download service icons into icons/ (once)
+uv run build.py            # → out/homelab.svg + .png (redacted)
+uv run build.py --unredacted
+```
+
+---
+
 ## Toolchain Quick Reference
 
 | Project | Package Manager | Runtime |
@@ -144,3 +160,4 @@ npm run serve            # HTTP: /mcp, /memories REST, /openapi.json
 | OpenJarvis  | uv + Cargo | Python 3.10+ |
 | smart-connections-mcp | npm | Node.js |
 | second-brain | npm | Node.js 22.13+ |
+| homelab-diagram | uv | Python 3.11+ |

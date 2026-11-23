@@ -20,9 +20,11 @@
 !projects/claude/
 !projects/claude/smart-connections-mcp/
 
-# Regular (non-submodule) projects
+# In-tree projects (not submodules)
 !projects/second-brain/
 !projects/second-brain/**
+!projects/homelab-diagram/
+!projects/homelab-diagram/**
 
 # Tool/cache dirs to keep ignored even if whitelisted above
 .cache/
