@@ -1,0 +1,267 @@
+# Inventory for the homelab diagram: everything the picture shows comes from this file.
+# build.py reads it; the positions of the boxes are hand-placed in build.py.
+# Hostnames: public apps (behind the reverse proxy) are shown as <host>.<domain> in blue,
+# everything else as <name>.internal in its VLAN color.
+
+meta:
+  title: "Dyson Home Lab"
+  title_redacted: "Dyson Home Lab"
+  date: "November 2026"
+  watermark: "commdice"
+  domain: "example.com"              # your real domain; only shown with --unredacted
+
+redact:
+  domain: true                      # default render replaces the domain with domain_placeholder
+  domain_placeholder: "redacted.com"
+  ssid_names: true                  # true → generic SSID names (redacted: field)
+
+vlans:   # order = table order
+  - {key: "10",  tag: "VLAN 10", name: LAN,   subnet: "10.0.10.0/24",    color: "#58a6ff", note: "trusted · may manage the other VLANs"}
+  - {key: "20",  tag: "VLAN 20", name: DMZ,   subnet: "10.0.20.0/24",    color: "#f0883e", note: "services · no access to LAN, GUEST or MGMT"}
+  - {key: "30",  tag: "VLAN 30", name: GUEST, subnet: "10.0.30.0/24",    color: "#bc8cff", note: "internet only · plus the NAS public share"}
+  - {key: "40",  tag: "VLAN 40", name: IoT,   subnet: "10.0.40.0/24",    color: "#3fb950", note: "internet only · HA gets a few narrow holes"}
+  - {key: "99",  tag: "VLAN 99", name: MGMT,  subnet: "10.0.99.0/24",    color: "#e3b341", note: "admin interfaces · only from LAN and VPN"}
+  - {key: "vpn", tag: "WireGuard", name: VPN,   subnet: "10.0.50.0/24",    color: "#39c5cf", note: "split tunnel · LAN-like access, no internet"}
+  - {key: "wan", tag: "Fritzbox", name: WAN,   subnet: "192.168.178.0/24", color: "#f85149", note: "untrusted · OPNsense's uplink to the Fritzbox"}
+
+internet:
+  speed: {down: "600 Mbit/s", up: "50 Mbit/s"}
+  cloud_services:
+    - {icon: cloudflare, name: "Cloudflare", note: "DNS · *.{domain} · DNS-01 wildcard cert"}
+    - {icon: backblaze,  name: "Backblaze B2", note: "offsite copy of NAS data"}
+
+# device card format: name + type tag / full device name (none = custom build) / IP · hostname / OS + version
+fritzbox:
+  name: "FRITZ!Box"
+  type: "ISP router"
+  model: "AVM FRITZ!Box 6660 Cable"
+  ip: "192.168.178.1"
+  os: "FRITZ!OS 8.25"
+  lan_ports: ["2.5G", "1G", "1G", "1G", "1G"]   # coax "Cable" port is drawn separately
+  opnsense_port: 1                              # index in lan_ports that OPNsense is plugged into
+
+opnsense:
+  name: "OPNsense"
+  type: "router/firewall"
+  model: "Lenovo thin client"
+  os: "OPNsense 26.7"
+  hw:
+    - {icon: glyph-cpu, label: "CPU",     value: "i3-9100T",     sub: "4 cores · 4 threads"}
+    - {icon: glyph-ram, label: "MEMORY",  value: "12 GB DDR4",   sub: "root on ZFS"}
+    - {icon: glyph-nic, label: "NETWORK", value: "dual 2.5G Intel", sub: "LACP to the switch"}
+    - {icon: glyph-nic, label: "NETWORK", value: "1G onboard", sub: "WAN to the Fritzbox"}
+  ip: "10.0.99.1"
+  internal: opnsense
+  nic_note: "LACP · dual 2.5G Intel NIC"
+  wan_ip: ".20"            # host part only; the network is in the Networks card
+  services:
+    - {icon: adguard,      name: "AdGuard Home", note: "DNS for all VLANs"}
+    - {icon: glyph-dhcp,   name: "dnsmasq",      note: "DHCP + *.internal"}
+    - {icon: wireguard,    name: "WireGuard",    note: "wg0 · UDP 51820"}
+    - {icon: glyph-shield, name: "Suricata IPS", note: "outbound inspection"}
+    - {icon: crowdsec,     name: "CrowdSec",     note: "LAPI + pf bouncer"}
+    - {icon: glyph-block,  name: "pf blocklist", note: "~2.3k bad IPs on WAN"}
+
+switch:
+  name: "MikroTik"
+  type: "switch"
+  model: "MikroTik CRS310-8G+2S+"
+  ip: "10.0.99.2"
+  internal: mikrotik
+  os: "RouterOS 7.20"
+  config: "configured as pure L2 switch"
+  # untagged = access VLAN, tagged = trunk VLANs
+  ports:
+    - {name: ether1, to: "OPNsense",  tagged: ["10","20","30","40","99"]}
+    - {name: ether2, to: "OPNsense",  tagged: ["10","20","30","40","99"]}
+    - {name: ether3, to: "MADCAT",    untagged: "10"}
+    - {name: ether4, to: "free",      tagged: ["10","20","40"]}
+    - {name: ether5, to: "JetKVM",    untagged: "10"}
+    - {name: ether6, to: "U7 Lite",   untagged: "99", tagged: ["10","30","40"]}
+    - {name: ether7, to: "SLZB-MR4",  untagged: "40"}
+    - {name: ether8, to: "rescue",    untagged: "99"}
+    - {name: sfpp1,  to: "MADCAT",    untagged: "10"}
+    - {name: sfpp2,  to: "terra",     tagged: ["10","20","40","99"]}
+
+devices:
+  madcat:
+    name: "MADCAT"
+    type: "workstation"
+    model: "Gaming PC"
+    os: "CachyOS + Windows 11"
+    icons: [cachyos, windows]
+    vlan: "10"
+    ip: "10.0.10.30 / .31"
+    internal: madcat
+  jetkvm: {name: "JetKVM", type: "IP-KVM", model: "JetKVM", icons: [jetkvm], vlan: "10", ip: "10.0.10.11", internal: jetkvm}
+  ap:     {name: "U7 Lite", type: "access point", model: "UniFi U7 Lite · Wi-Fi 7", icons: [unifi], vlan: "99", trunk: true, ip: "10.0.99.62", internal: u7lite}
+  slzb:   {name: "SLZB-MR4", type: "coordinator", model: "SMLIGHT SLZB-MR4 · Zigbee + Thread", icons: [glyph-antenna], vlan: "40", ip: "10.0.40.20", internal: slzb-mr4}
+
+ssids:
+  - {name: "Home",        redacted: "Home",  vlan: "10"}
+  - {name: "Guest",       redacted: "Guest", vlan: "30"}
+  - {name: "IoT",         redacted: "IoT",   vlan: "40"}
+
+remote:
+  name: "Remote access"
+  note: "phone + laptop · WireGuard VPN"
+
+port_forwards:
+  - {port: "80, 443",   proto: "TCP/UDP", to: "Traefik",       what: "every *.{domain} site"}
+  - {port: "22",        proto: "TCP",     to: "Forgejo",       what: "git over SSH (→ :2222)"}
+  - {port: "1024",      proto: "TCP",     to: "TrueNAS",       what: "key-only SFTP backups"}
+  - {port: "51820",     proto: "UDP",     to: "WireGuard",     what: "remote access VPN"}
+  - {port: "64001",     proto: "TCP/UDP", to: "qBittorrent",   what: "incoming peers"}
+  - {port: "2022, 25560-70, …", proto: "TCP/UDP", to: "Pelican Wings", what: "game servers + SFTP"}
+
+terra:
+  name: "terra"
+  type: "server"
+  model: "Proxmox Server"
+  os: "Proxmox VE 9.2"
+  ip: "10.0.10.20"
+  internal: terra
+  hw:
+    # label = type · value = the part · sub = extra info, or where it is passed through to
+    - {icon: glyph-cpu, label: "CPU",     value: "Ryzen 9 9900X",             sub: "12 cores · 24 threads"}
+    - {icon: glyph-ram, label: "MEMORY",  value: "64 GB DDR5",                sub: "~60 GB usable"}
+    - {icon: glyph-gpu, label: "GPU",     value: "Radeon iGPU",               sub: "passthrough → Jellyfin (CT 152)"}
+    - {icon: glyph-nic, label: "NETWORK", value: "ConnectX-3 10G",            sub: "SFP+ · VLAN-aware bridge"}
+    - {icon: glyph-ssd, label: "SSD",     value: "Samsung 980 500 GB",        sub: "NVMe · Proxmox OS"}
+    - {icon: glyph-ssd, label: "SSD",     value: "Crucial P5 Plus 2 TB",      sub: "NVMe · guest disks"}
+    - {icon: glyph-hdd, label: "HDD",     value: "7× Seagate Exos 16 TB",     sub: "SAS + SATA · passthrough → TrueNAS"}
+    - {icon: glyph-ssd, label: "SSD",     value: "Samsung 970 EVO Plus 1 TB", sub: "NVMe · passthrough → TrueNAS"}
+    - {icon: glyph-ssd, label: "SSD",     value: "Samsung 470 128 GB",        sub: "SATA · passthrough → TrueNAS"}
+    - {icon: glyph-ssd, label: "SSD",     value: "SK hynix 256 GB",           sub: "SATA · passthrough → TrueNAS"}
+  # exposure: public = via Traefik, local = Traefik but LAN/VPN only; host = <host>.<domain>; internal = <name>.internal
+  dmz_groups:
+    - name: "Edge & security"
+      guests:
+        - id: 149
+          ip: ".49"
+          name: "Edge stack"
+          icons: [traefik, authentik]
+          note: "reverse proxy · SSO · security"
+          docker: true
+          apps:
+            - {icon: traefik,   name: "Traefik",      host: traefik}
+            - {icon: authentik, name: "authentik",    host: auth}
+            - {icon: authentik, name: "LDAP outpost", note: "LDAPS for Jellyfin"}
+            - {icon: crowdsec,  name: "CrowdSec",     note: "agent + AppSec WAF"}
+            - {icon: alloy,     name: "Alloy",        note: "access logs → Loki"}
+    - name: "Monitoring"
+      guests:
+        - {id: 102, name: "Grafana", icons: [grafana], note: "dashboards", host: grafana, exposure: local}
+        - {id: 113, name: "Prometheus", icons: [prometheus], note: "Traefik metrics", internal: prometheus}
+        - {id: 116, name: "Loki", icons: [loki], note: "logs via Alloy", internal: loki}
+        - {id: 120, name: "OpenSpeedTest", icons: [openspeedtest], note: "patched upload test", host: speedtest, exposure: public}
+    - name: "Media & photos"
+      guests:
+        - id: 152
+          name: "Jellyfin"
+          icons: [jellyfin]
+          note: "streaming (iGPU) + stats"
+          apps:
+            - {icon: jellyfin,  name: "Jellyfin",  host: jellyfin}
+            - {icon: jellystat, name: "Jellystat", host: jellystat}
+        - {id: 153, name: "Seerr", icons: [seerr], note: "movie & series requests", host: seerr, exposure: public}
+        - id: 154
+          ip: ".54"
+          name: "*arr stack"
+          icons: [sonarr, radarr, prowlarr, bazarr]
+          note: "one CT, one Docker container per app"
+          docker: true
+          apps:     # one row each in the CT card
+            - {icon: sonarr,   name: "Sonarr",     host: sonarr}
+            - {icon: sonarr,   name: "Sonarr-Ani", host: sonarr-ani}
+            - {icon: radarr,   name: "Radarr",     host: radarr}
+            - {icon: prowlarr, name: "Prowlarr",   host: prowlarr}
+            - {icon: bazarr,   name: "Bazarr",     host: bazarr}
+        - {id: 140, name: "qBittorrent", icons: [qbittorrent], note: "VueTorrent UI", host: torrent, exposure: public}
+        - {id: 130, name: "MeTube", icons: [metube], note: "YouTube downloader", host: yt, exposure: local}
+        - {id: 158, ip: ".58", name: "Immich", icons: [immich], note: "photo library", host: immich, exposure: public}
+    - name: "Productivity"
+      guests:
+        - {id: 111, name: "Paperless-ngx", icons: [paperless], note: "scanned documents", host: paperless, exposure: public}
+        - {id: 125, name: "Stirling PDF", icons: [stirling], note: "PDF tools", host: pdf, exposure: public}
+        - {id: 132, name: "Tandoor", icons: [tandoor], note: "recipes", host: food, exposure: public}
+        - {id: 103, name: "Actual Budget", icons: [actual], note: "finances", host: actual, exposure: public}
+        - id: 134
+          name: "Open WebUI"
+          icons: [openwebui-l, ollama-l]
+          note: "local AI"
+          apps:
+            - {icon: openwebui-l, name: "Open WebUI", host: ai}
+            - {icon: ollama-l,    name: "Ollama",     note: "local models"}
+    - name: "Gaming"
+      guests:
+        - {id: 100, name: "Pelican Panel", icons: [pelican], note: "game server panel", host: pelican, exposure: public}
+        - {id: 101, name: "Pelican Wings", icons: [pelican], note: "node2 · runs all game servers", host: node2, exposure: public}
+    - name: "Dev"
+      guests:
+        - {id: 131, name: "Forgejo", icons: [forgejo], note: "git · SSH on public :22", host: git, exposure: public}
+        - {id: 119, name: "Forgejo runner", icons: [forgejo], note: "CI / Actions", internal: forgejo-runner}
+        - {id: 118, name: "Penpot", icons: [penpot-l], note: "design & prototyping", host: penpot, exposure: public}
+    - name: "Chat"
+      guests:
+        - id: 142
+          name: "Matrix"
+          icons: [matrix-l]
+          note: "chat server"
+          apps:
+            - {icon: matrix-l, name: "Synapse",       host: matrix}
+            - {icon: cinny,    name: "Cinny",         note: "web client (same host)"}
+            - {icon: matrix-l, name: "synapse-admin", note: "/admin · LAN only"}
+        - id: 117
+          name: "mautrix bridges"
+          icons: [matrix-l, whatsapp]
+          note: "chat bridges → Matrix"
+          docker: true
+          apps:
+            - {icon: whatsapp, name: "WhatsApp", note: "mautrix-whatsapp"}
+            - {icon: signal,   name: "Signal",   note: "mautrix-signal"}
+            - {icon: discord,  name: "Discord",  note: "mautrix-discord"}
+  # the *arr pipeline card (Media & photos); grid row A / row B, three columns
+  media_pipeline:
+    nodes:
+      seerr:    {icon: seerr, name: "Seerr", ip: ".153", ct: 153, sub: "requests", host: seerr}
+      prowlarr: {icon: prowlarr, name: "Prowlarr", ip: ".54", ct: 154, sub: "indexers", host: prowlarr}
+      jellyfin: {icon: jellyfin, name: "Jellyfin", ip: ".152", ct: 152, sub: "streams · iGPU", host: jellyfin}
+      qbit:     {icon: qbittorrent, name: "qBittorrent", ip: ".140", ct: 140, sub: "downloads", host: torrent}
+    shares:     # TrueNAS SMB shares, CIFS-mounted on terra, bind-mounted into the LXCs
+      media:    {name: "Media share", pool: "Vault · 35.6 / 85.6 TiB used", mounts: "CT 152 · 154"}
+      torrents: {name: "Torrents share", pool: "FasterBoy · 38 / 903 GiB used", mounts: "CT 140 · 154 · 130"}
+    arrs:       # the three *arr instances (all Docker in CT 154)
+      - {icon: sonarr, name: "Sonarr", ip: ".54", host: sonarr}
+      - {icon: sonarr, name: "Sonarr-Ani", ip: ".54", host: sonarr-ani}
+      - {icon: radarr, name: "Radarr", ip: ".54", host: radarr}
+  other_guests:
+    truenas:
+      id: 133
+      kind: VM
+      vlan: "10"
+      ip: "10.0.10.10"
+      internal: truenas
+      name: "TrueNAS SCALE"
+      icons: [truenas]
+      note: "VM 133 · 6 vCPU · 16 GB"
+      pools:
+        - name: Vault
+          layout: "7 HDD + 2 SSD"
+          used: "48 % used · 44.2 TiB free · 85.6 TiB usable"
+          pct: 48
+          groups:
+            - {kind: hdd, count: 7, label: "data · RAIDZ1", sub: "7× Seagate Exos 16 TB", sub2: "1 disk may fail"}
+            - {kind: ssd, count: 2, label: "special vdev · mirror", sub: "Samsung 470 + SK hynix", sub2: "metadata · 22 / 118 GiB used"}
+        - name: FasterBoy
+          layout: "1 NVMe"
+          used: "5 % used · 857 GiB free · 903 GiB usable"
+          pct: 5
+          groups:
+            - {kind: nvme, count: 1, label: "data · single disk", sub: "Samsung 970 EVO Plus 1 TB", sub2: "no redundancy"}
+      footer: "hourly snapshots · important datasets synced to Backblaze B2"
+    haos:
+      {id: 106, kind: VM, vlan: "40", ip: "10.0.40.2", host: ha, name: "Home Assistant OS", icons: [homeassistant], note: "VM 106 · 2 vCPU · 4 GB",
+       addons: [zigbee2mqtt, mosquitto, thread-l, matter-l, esphome], addons_text: "Z2M · MQTT · OTBR · Matter · ESPHome"}
+    unifi: {id: 129, kind: CT, vlan: "99", ip: "10.0.99.53", internal: unifi, name: "UniFi OS Server", icons: [unifi], note: "CT 129 · manages the U7 Lite"}
+    bliss: {id: 138, kind: VM, vlan: "10", ip: "10.0.10.155", internal: generic-android-x86-64, name: "BlissOS", icons: [android], badge: whatsapp, note: "VM 138 · WhatsApp for Matrix"}
