@@ -10,6 +10,7 @@ This is a monorepo containing three independent AI/agent projects plus a subproj
 - **space-agent** — Browser-first AI agent with Node.js server (JavaScript/Vue)
 - **OpenJarvis** — Personal AI framework for on-device LLMs (Python + Rust extensions)
 - **projects/claude/smart-connections-mcp** — MCP server for Obsidian Smart Connections (TypeScript/Node.js)
+- **projects/homelab-diagram** — r/homelab-style network diagram generator, YAML → SVG/PNG (Python; fork of Goblinmine/homelab-diagram)
 
 Each project is fully independent with its own toolchain.
 
@@ -112,6 +113,21 @@ tsc --noEmit             # type check
 
 ---
 
+## projects/homelab-diagram
+
+Renders a homelab network diagram from `inventory.yaml`; layout is hand-placed in `build.py`. Has its own `CLAUDE.md` with the adaptation workflow. Needs `rsvg-convert` (librsvg) and the Fira Sans / Fira Code fonts.
+
+### Commands
+```bash
+cd projects/homelab-diagram
+uv sync                    # PyYAML + Pillow
+uv run fetch_icons.py      # download service icons into icons/ (once)
+uv run build.py            # → out/homelab.svg + .png (redacted)
+uv run build.py --unredacted
+```
+
+---
+
 ## Toolchain Quick Reference
 
 | Project | Package Manager | Runtime |
@@ -120,3 +136,4 @@ tsc --noEmit             # type check
 | space-agent | npm       | Node.js 20+ |
 | OpenJarvis  | uv + Cargo | Python 3.10+ |
 | smart-connections-mcp | npm | Node.js |
+| homelab-diagram | uv | Python 3.11+ |
