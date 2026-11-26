@@ -19,6 +19,11 @@
 !projects/
 !projects/claude/
 !projects/claude/smart-connections-mcp/
+!projects/lcars-galaxy/
+!projects/lcars-galaxy/**
+!.github/
+!.github/workflows/
+!.github/workflows/lcars-galaxy-apk.yml
 
 # In-tree projects (not submodules)
 !projects/second-brain/
@@ -38,3 +43,9 @@
 .local/
 .config/
 snap/
+
+# Android build outputs
+projects/lcars-galaxy/android/.gradle/
+projects/lcars-galaxy/android/build/
+projects/lcars-galaxy/android/app/build/
+projects/lcars-galaxy/android/local.properties

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- LCARS-style elbow and three pills, kept inside the adaptive-icon safe zone. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#FF9966"
+        android:pathData="M42,28 H80 V37 H48 A7,7 0 0 0 41,44 V80 H30 V40 A12,12 0 0 1 42,28 Z" />
+    <path
+        android:fillColor="#CC99CC"
+        android:pathData="M50,44 H75 A5,5 0 0 1 75,54 H50 A5,5 0 0 1 50,44 Z" />
+    <path
+        android:fillColor="#9999FF"
+        android:pathData="M50,57 H68 A5,5 0 0 1 68,67 H50 A5,5 0 0 1 50,57 Z" />
+    <path
+        android:fillColor="#FFCC99"
+        android:pathData="M50,70 H75 A5,5 0 0 1 75,80 H50 A5,5 0 0 1 50,70 Z" />
+</vector>

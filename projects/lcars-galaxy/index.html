@@ -1,0 +1,937 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#000000">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Galaxy OPS</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Antonio:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #000;
+    --c1: #ff9966;   /* orange   */
+    --c2: #cc99cc;   /* lavender */
+    --c3: #9999ff;   /* periwinkle */
+    --c4: #ffcc99;   /* peach    */
+    --c5: #ff9900;   /* gold     */
+    --c6: #6688cc;   /* blue     */
+    --c7: #cc6666;   /* rust     */
+    --text: #ff9966;
+    --dim: #b98a6e;
+    --ink: #000;
+    --side: 96px;
+    --bar: 20px;
+    --gap: 4px;
+    --radius: 56px;
+    --font: "Antonio", "Arial Narrow", "Roboto Condensed", "sans-serif-condensed", sans-serif;
+  }
+  :root[data-theme="blue"] {
+    --c1: #5588ff; --c2: #88aaff; --c3: #aaccff; --c4: #99bbee;
+    --c5: #3366cc; --c6: #77ddff; --c7: #4455aa; --text: #88aaff; --dim: #6c84b8;
+  }
+  :root[data-theme="nemesis"] {
+    --c1: #cc8844; --c2: #886644; --c3: #bb9966; --c4: #ddbb88;
+    --c5: #aa5522; --c6: #665544; --c7: #993322; --text: #ddbb88; --dim: #a08060;
+  }
+  body.red-alert {
+    --c1: #ff3333; --c2: #cc2222; --c3: #ff6666; --c4: #ff9999;
+    --c5: #ff0000; --c6: #aa1111; --c7: #ff4444; --text: #ff5555; --dim: #c04040;
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  [hidden] { display: none !important; }
+  html, body { margin: 0; height: 100%; background: var(--bg); }
+  body {
+    color: var(--text);
+    font-family: var(--font);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+  button { font: inherit; color: inherit; letter-spacing: inherit; text-transform: inherit; border: 0; cursor: pointer; }
+
+  /* ---------- Frame ---------- */
+  .frame {
+    height: 100%;
+    display: grid;
+    grid-template-columns: var(--side) 1fr;
+    grid-template-rows: 76px 1fr 64px;
+    gap: 0 10px;
+    padding: 8px 8px 8px 8px;
+  }
+  .elbow { position: relative; background: var(--c1); transition: background .3s; }
+  .elbow.top { border-top-left-radius: var(--radius); }
+  .elbow.bottom { border-bottom-left-radius: var(--radius); background: var(--c2); }
+  .elbow.top::after, .elbow.bottom::after {
+    content: ""; position: absolute; width: 28px; height: 28px; right: -38px;
+  }
+  .elbow.top::after { top: var(--bar); background: radial-gradient(circle at 100% 100%, transparent 27px, var(--c1) 28px); }
+  .elbow.bottom::after { bottom: var(--bar); background: radial-gradient(circle at 100% 0%, transparent 27px, var(--c2) 28px); }
+  /* bridge: fill the 10px column gap so the elbow reads as one shape */
+  .elbow.top::before, .elbow.bottom::before { content: ""; position: absolute; right: -10px; width: 10px; height: var(--bar); }
+  .elbow.top::before { top: 0; background: var(--c1); }
+  .elbow.bottom::before { bottom: 0; background: var(--c2); }
+  .elbow .code { position: absolute; left: 0; right: 10px; bottom: 6px; text-align: right; color: var(--ink); font-size: 13px; }
+  .elbow.bottom .code { top: 8px; bottom: auto; }
+
+  .hbar { display: flex; gap: var(--gap); align-items: flex-start; min-width: 0; }
+  .hbar.bottom { align-items: flex-end; }
+  .seg { height: var(--bar); background: var(--c1); flex: 0 0 auto; transition: background .3s; }
+  .seg.grow { flex: 1 1 auto; min-width: 28px; }
+  .seg.cap { border-radius: 0 999px 999px 0; width: 24px; }
+  .hbar .title {
+    font-size: clamp(22px, 7.5vw, 38px); line-height: 1; font-weight: 700; color: var(--c1);
+    margin-top: -6px; padding: 0 6px; white-space: nowrap; flex: 0 1 auto; min-width: 0;
+    overflow: hidden; text-overflow: ellipsis;
+  }
+  .hbar.bottom .title { font-size: 13px; margin: 0 0 -1px; color: var(--c2); }
+  .header-right { display: flex; flex-direction: column; justify-content: space-between; min-width: 0; }
+  .readout { display: flex; justify-content: flex-end; gap: 14px; font-size: 13px; color: var(--dim); padding-bottom: 4px; }
+  .readout b { color: var(--c4); font-weight: 600; }
+
+  /* ---------- Sidebar ---------- */
+  .side { display: flex; flex-direction: column; gap: var(--gap); padding: var(--gap) 0; min-height: 0; overflow: hidden; }
+  .navbtn {
+    flex: 0 0 auto; height: 58px; background: var(--c3); color: var(--ink);
+    text-align: right; padding: 0 10px 6px; display: flex; align-items: flex-end; justify-content: flex-end;
+    font-size: 15px; font-weight: 600; transition: background .2s, filter .1s;
+  }
+  .navbtn small { display: block; font-size: 10px; opacity: .7; }
+  .navbtn:nth-child(2) { background: var(--c4); }
+  .navbtn:nth-child(3) { background: var(--c2); }
+  .navbtn:nth-child(4) { background: var(--c6); }
+  .navbtn:nth-child(5) { background: var(--c5); }
+  .navbtn:nth-child(6) { background: var(--c7); }
+  .navbtn:nth-child(7) { background: var(--c1); }
+  .navbtn.active { filter: brightness(1.25); box-shadow: inset -8px 0 0 #fff8; }
+  .navbtn:active, .pill:active, .tile:active { filter: brightness(1.5); }
+  .side .fill { flex: 1 1 auto; background: var(--c2); min-height: 20px; transition: background .3s; }
+  .side .fill.alt { flex: 0 0 34px; background: var(--c1); }
+
+  /* ---------- Main ---------- */
+  main { min-height: 0; overflow-y: auto; overflow-x: hidden; padding: 10px 2px 10px 6px; scrollbar-width: none; }
+  main::-webkit-scrollbar { display: none; }
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* ---------- LCARS motion ---------- */
+  @keyframes flash { 0% { filter: brightness(2.3); } 25% { filter: brightness(.65); } 50% { filter: brightness(1.8); } 100% { filter: brightness(1); } }
+  .flash { animation: flash .38s steps(4, end); }
+  @keyframes chase { 0%, 100% { filter: brightness(1); } 40% { filter: brightness(2); } }
+  .chase { animation: chase .3s ease-out; }
+  @keyframes select {
+    0% { filter: brightness(2.6); transform: translateX(8px); }
+    55% { filter: brightness(1.5); transform: translateX(-2px); }
+    100% { filter: brightness(1.25); transform: none; }
+  }
+  .navbtn.select { animation: select .5s cubic-bezier(.2, .8, .2, 1); }
+  @keyframes enter {
+    from { opacity: 0; transform: translateX(-28px); clip-path: inset(0 100% 0 0); }
+    60% { opacity: 1; }
+    to { opacity: 1; transform: none; clip-path: inset(0 0 0 0); }
+  }
+  .enter { animation: enter .34s cubic-bezier(.2, .8, .2, 1) both; }
+  @keyframes tileIn { from { opacity: 0; transform: scaleX(.15); } to { opacity: 1; transform: none; } }
+  .tile.tile-in { transform-origin: right center; animation: tileIn .32s cubic-bezier(.2, .8, .2, 1) both; }
+  @keyframes launch { 0% { filter: brightness(1); } 30% { filter: brightness(2.3); transform: scaleX(1.04); } 100% { filter: brightness(1.2); transform: none; } }
+  .tile.launch { animation: launch .3s ease-out; }
+  .tile.launch::after {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .6), transparent);
+    animation: sweep .3s linear forwards;
+  }
+  @keyframes sweep { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+  .title.typing::after { content: "_"; animation: blink .3s steps(2) infinite; }
+
+  h2 { margin: 0 0 8px; font-size: 22px; color: var(--c4); font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  h2::after { content: ""; flex: 1; height: 8px; background: var(--c6); border-radius: 999px; }
+  .sub { color: var(--dim); font-size: 13px; margin: -4px 0 12px; }
+
+  .clock { font-size: clamp(48px, 16vw, 120px); white-space: nowrap; line-height: .9; color: var(--c5); font-weight: 600; letter-spacing: 0; }
+  .clock .sec { font-size: .4em; color: var(--c1); margin-left: 6px; }
+  .stardate { font-size: 22px; color: var(--c3); margin-top: 4px; }
+  .date { font-size: 16px; color: var(--dim); margin-bottom: 14px; }
+
+  .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 10px 0 16px; }
+  .stat { border-left: 10px solid var(--c2); padding: 2px 0 2px 8px; }
+  .stat:nth-child(2n) { border-color: var(--c6); }
+  .stat:nth-child(3n) { border-color: var(--c5); }
+  .stat label { display: block; font-size: 11px; color: var(--dim); }
+  .stat { min-width: 0; }
+  .stat span { display: block; font-size: 19px; color: var(--c4); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .meter { height: 14px; background: #222; border-radius: 999px; overflow: hidden; margin: 4px 0 10px; }
+  .meter i { display: block; height: 100%; width: 0; background: var(--c5); border-radius: 999px; transition: width .6s; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 6px; }
+  .tile {
+    position: relative; height: 54px; border-radius: 999px; background: var(--c2); color: var(--ink);
+    display: flex; align-items: center; justify-content: flex-end; padding: 0 18px; font-size: 16px; font-weight: 600;
+    text-decoration: none; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+  }
+  .tile:nth-child(4n+2) { background: var(--c4); }
+  .tile:nth-child(4n+3) { background: var(--c3); }
+  .tile:nth-child(4n) { background: var(--c1); }
+  .tile .n { position: absolute; left: 16px; font-size: 11px; opacity: .6; }
+  .tile .x { position: absolute; left: 14px; font-size: 18px; }
+  #editGrid .tile { padding: 0 14px 0 34px; font-size: 14px; }
+
+  .pill {
+    border-radius: 999px; background: var(--c3); color: var(--ink); padding: 10px 18px;
+    font-size: 15px; font-weight: 600; text-align: right; min-width: 110px;
+  }
+  .pill.alt { background: var(--c1); }
+  .pill.warn { background: var(--c7); }
+  .row { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 14px; }
+
+  .bars { display: flex; align-items: flex-end; gap: 3px; height: 70px; margin: 8px 0 14px; }
+  .bars i { flex: 1; background: var(--c6); border-radius: 3px 3px 0 0; transition: height .5s; }
+  .bars i:nth-child(3n) { background: var(--c2); }
+  .bars i:nth-child(5n) { background: var(--c5); }
+
+  .compass { width: 180px; height: 180px; margin: 10px auto; position: relative; border-radius: 50%; border: 10px solid var(--c2); }
+  .compass .needle { position: absolute; left: 50%; top: 50%; width: 8px; height: 76px; margin: -76px 0 0 -4px; background: var(--c5); border-radius: 999px; transform-origin: 50% 100%; transition: transform .2s; }
+  .compass .lbl { position: absolute; font-size: 14px; color: var(--c4); }
+
+  .log { border-left: 10px solid var(--c3); padding: 4px 10px; margin-bottom: 8px; text-transform: none; letter-spacing: 0; }
+  .log time { display: block; color: var(--c4); font-size: 12px; text-transform: uppercase; letter-spacing: .05em; }
+  .log p { margin: 2px 0 0; color: #f0d8c8; font-family: system-ui, sans-serif; font-size: 14px; white-space: pre-wrap; word-break: break-word; }
+  textarea, input[type=text], input[type=url] {
+    width: 100%; background: #111; color: #ffe; border: 2px solid var(--c6); border-radius: 18px;
+    padding: 10px 14px; font: 15px system-ui, sans-serif; outline: none;
+  }
+  textarea { min-height: 86px; resize: vertical; }
+  textarea:focus, input:focus { border-color: var(--c5); }
+
+  .toggle { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 2px solid #222; font-size: 17px; }
+  .toggle .pill { min-width: 84px; }
+  .toggle .pill[aria-pressed="false"] { background: #333; color: var(--dim); }
+
+  .scan { height: 6px; background: linear-gradient(90deg, transparent, var(--c5), transparent); background-size: 40% 100%; background-repeat: no-repeat; animation: scan 2.4s linear infinite; margin: 6px 0 12px; border-radius: 999px; }
+  @keyframes scan { from { background-position: -40% 0; } to { background-position: 140% 0; } }
+  .blink { animation: blink 1s steps(2) infinite; }
+  @keyframes blink { 50% { opacity: .25; } }
+
+  body.red-alert .elbow, body.red-alert .seg, body.red-alert .side .fill { animation: alert .9s ease-in-out infinite; }
+  @keyframes alert { 50% { filter: brightness(.45); } }
+  .alert-banner { display: none; text-align: center; font-size: 34px; color: var(--c5); margin: 4px 0 10px; }
+  body.red-alert .alert-banner { display: block; animation: blink .9s steps(2) infinite; }
+
+  @media (max-width: 380px) {
+    :root { --side: 78px; --radius: 44px; }
+    .navbtn { font-size: 13px; height: 52px; }
+  }
+  @media (orientation: landscape) and (max-height: 500px) {
+    .frame { grid-template-rows: 56px 1fr 40px; }
+    .navbtn { height: 44px; }
+    .clock { font-size: 72px; }
+  }
+</style>
+</head>
+<body>
+<div class="frame">
+  <!-- header -->
+  <div class="elbow top"><span class="code" id="codeTop">01-4471</span></div>
+  <div class="header-right">
+    <div class="hbar">
+      <div class="seg grow"></div>
+      <div class="title" id="panelTitle">OPS</div>
+      <div class="seg cap" style="background:var(--c3)"></div>
+    </div>
+    <div class="readout">
+      <span>PWR <b id="hdrBatt">--</b></span>
+      <span>NET <b id="hdrNet">--</b></span>
+      <span><b id="hdrClock">--:--</b></span>
+    </div>
+  </div>
+
+  <!-- sidebar -->
+  <nav class="side" id="side">
+    <button class="navbtn active" data-panel="ops"><span><small>01</small>OPS</span></button>
+    <button class="navbtn" data-panel="comms"><span><small>02</small>COMMS</span></button>
+    <button class="navbtn" data-panel="systems"><span><small>03</small>SYSTEMS</span></button>
+    <button class="navbtn" data-panel="nav"><span><small>04</small>NAV</span></button>
+    <button class="navbtn" data-panel="log"><span><small>05</small>LOG</span></button>
+    <button class="navbtn" data-panel="config"><span><small>06</small>CONFIG</span></button>
+    <button class="navbtn" data-panel="apps" hidden><span><small>07</small>APPS</span></button>
+    <div class="fill"></div>
+    <div class="fill alt"></div>
+  </nav>
+
+  <!-- content -->
+  <main id="main">
+    <div class="alert-banner">RED ALERT</div>
+
+    <!-- OPS -->
+    <section class="panel active" id="ops" data-title="OPS">
+      <div class="clock"><span id="clock">--:--</span><span class="sec" id="sec">--</span></div>
+      <div class="stardate">STARDATE <span id="stardate">-----.-</span></div>
+      <div class="date" id="date"></div>
+      <div class="scan"></div>
+      <div class="stats">
+        <div class="stat"><label>POWER CELL</label><span id="opsBatt">--</span></div>
+        <div class="stat"><label>SUBSPACE LINK</label><span id="opsNet">--</span></div>
+        <div class="stat"><label>CORES ONLINE</label><span id="opsCores">--</span></div>
+        <div class="stat"><label>SESSION UPTIME</label><span id="opsUp">00:00:00</span></div>
+      </div>
+      <h2>QUICK LAUNCH</h2>
+      <div class="grid" id="quickGrid"></div>
+      <div class="row" style="margin-top:14px">
+        <button class="pill warn" id="btnAlert">RED ALERT</button>
+        <button class="pill alt" id="btnFull">FULL SCREEN</button>
+      </div>
+    </section>
+
+    <!-- COMMS -->
+    <section class="panel" id="comms" data-title="COMMS">
+      <h2>CHANNELS</h2>
+      <p class="sub">Tap to open the matching Galaxy app.</p>
+      <div class="grid" id="commsGrid"></div>
+      <h2 style="margin-top:16px">HAIL</h2>
+      <input type="text" id="hailNum" inputmode="tel" placeholder="Number or address">
+      <div class="row">
+        <button class="pill" data-hail="tel">VOICE</button>
+        <button class="pill alt" data-hail="sms">TEXT</button>
+        <button class="pill" data-hail="mailto">EMAIL</button>
+      </div>
+    </section>
+
+    <!-- SYSTEMS -->
+    <section class="panel" id="systems" data-title="SYSTEMS">
+      <h2>POWER</h2>
+      <div class="stats">
+        <div class="stat"><label>LEVEL</label><span id="sysBatt">--</span></div>
+        <div class="stat"><label>STATUS</label><span id="sysCharge">--</span></div>
+      </div>
+      <div class="meter"><i id="battMeter"></i></div>
+      <h2>CORE</h2>
+      <div class="stats">
+        <div class="stat"><label>PROCESSOR CORES</label><span id="sysCores">--</span></div>
+        <div class="stat"><label>MEMORY</label><span id="sysMem">--</span></div>
+        <div class="stat"><label>DISPLAY</label><span id="sysScreen">--</span></div>
+        <div class="stat"><label>PIXEL RATIO</label><span id="sysDpr">--</span></div>
+        <div class="stat"><label>STORAGE USED</label><span id="sysStore">--</span></div>
+        <div class="stat"><label>ORIENTATION</label><span id="sysOrient">--</span></div>
+      </div>
+      <h2>SUBSPACE</h2>
+      <div class="stats">
+        <div class="stat"><label>LINK</label><span id="sysOnline">--</span></div>
+        <div class="stat"><label>TYPE</label><span id="sysNetType">--</span></div>
+        <div class="stat"><label>DOWNLINK</label><span id="sysDown">--</span></div>
+        <div class="stat"><label>LATENCY</label><span id="sysRtt">--</span></div>
+      </div>
+      <h2>FRAME LOAD</h2>
+      <div class="bars" id="bars"></div>
+      <div class="sub">FPS <span id="fps">--</span></div>
+    </section>
+
+    <!-- NAV -->
+    <section class="panel" id="nav" data-title="NAV">
+      <h2>HEADING</h2>
+      <div class="compass">
+        <span class="lbl" style="top:2px;left:50%;transform:translateX(-50%)">N</span>
+        <span class="lbl" style="bottom:2px;left:50%;transform:translateX(-50%)">S</span>
+        <span class="lbl" style="left:6px;top:50%;transform:translateY(-50%)">W</span>
+        <span class="lbl" style="right:6px;top:50%;transform:translateY(-50%)">E</span>
+        <div class="needle" id="needle"></div>
+      </div>
+      <div class="stats">
+        <div class="stat"><label>BEARING</label><span id="bearing">---</span></div>
+        <div class="stat"><label>TILT</label><span id="tilt">---</span></div>
+      </div>
+      <div class="row"><button class="pill" id="btnSensors">ENGAGE SENSORS</button></div>
+      <h2>POSITION</h2>
+      <div class="stats">
+        <div class="stat"><label>LATITUDE</label><span id="lat">--</span></div>
+        <div class="stat"><label>LONGITUDE</label><span id="lon">--</span></div>
+        <div class="stat"><label>ACCURACY</label><span id="acc">--</span></div>
+        <div class="stat"><label>ALTITUDE</label><span id="alt">--</span></div>
+      </div>
+      <div class="row">
+        <button class="pill alt" id="btnLocate">LOCATE</button>
+        <button class="pill" id="btnMap">OPEN MAPS</button>
+      </div>
+    </section>
+
+    <!-- LOG -->
+    <section class="panel" id="log" data-title="LOG">
+      <h2>NEW ENTRY</h2>
+      <textarea id="logText" placeholder="Personal log, supplemental..."></textarea>
+      <div class="row">
+        <button class="pill alt" id="btnLogSave">RECORD</button>
+        <button class="pill" id="btnLogVoice">VOICE INPUT</button>
+        <button class="pill warn" id="btnLogClear">PURGE ALL</button>
+      </div>
+      <h2>ARCHIVE</h2>
+      <div id="logList"></div>
+    </section>
+
+    <!-- CONFIG -->
+    <section class="panel" id="config" data-title="CONFIG">
+      <div id="launcherCfg" hidden>
+        <h2>LAUNCHER</h2>
+        <p class="sub" id="homeState"></p>
+        <div class="row"><button class="pill alt" id="btnSetHome">SET AS HOME SCREEN</button></div>
+      </div>
+      <h2>INTERFACE</h2>
+      <div class="toggle">AUDIO CHIRPS <button class="pill" data-toggle="sound" aria-pressed="true">ON</button></div>
+      <div class="toggle">HAPTICS <button class="pill" data-toggle="haptics" aria-pressed="true">ON</button></div>
+      <div class="toggle">ANIMATIONS <button class="pill" data-toggle="anim" aria-pressed="true">ON</button></div>
+      <div class="toggle">KEEP SCREEN AWAKE <button class="pill" data-toggle="wake" aria-pressed="false">OFF</button></div>
+      <h2 style="margin-top:14px">COLOR SCHEME</h2>
+      <div class="row">
+        <button class="pill alt" data-theme-set="classic">CLASSIC</button>
+        <button class="pill" data-theme-set="blue">AZURE</button>
+        <button class="pill" data-theme-set="nemesis" style="background:#bb9966">BRONZE</button>
+      </div>
+      <h2>QUICK LAUNCH SLOTS</h2>
+      <p class="sub">Any link works: https://, tel:, sms:, geo:, or an Android intent:// URL.</p>
+      <div class="grid" id="editGrid"></div>
+      <div style="margin-top:10px;display:grid;gap:6px">
+        <input type="text" id="newName" placeholder="Label (e.g. YOUTUBE)">
+        <input type="url" id="newUrl" placeholder="https://m.youtube.com">
+      </div>
+      <div class="row">
+        <button class="pill alt" id="btnAddSlot">ADD SLOT</button>
+        <button class="pill warn" id="btnResetSlots">RESTORE DEFAULTS</button>
+      </div>
+      <p class="sub" id="installHint">Install: browser menu &rarr; Add to Home screen.</p>
+      <div class="row"><button class="pill" id="btnInstall" hidden>INSTALL TO HOME SCREEN</button></div>
+    </section>
+    <!-- APPS (Android app only) -->
+    <section class="panel" id="apps" data-title="APPS">
+      <h2>APP DIRECTORY</h2>
+      <input type="text" id="appSearch" placeholder="Search apps" autocomplete="off">
+      <div class="row">
+        <button class="pill" id="btnPin">PIN MODE: OFF</button>
+        <button class="pill alt" id="btnRefreshApps">RESCAN</button>
+      </div>
+      <p class="sub" id="appCount"></p>
+      <div class="grid" id="appGrid"></div>
+    </section>
+  </main>
+
+  <!-- footer -->
+  <div class="elbow bottom"><span class="code" id="codeBot">LCS-47</span></div>
+  <div class="hbar bottom">
+    <div class="seg grow" style="background:var(--c6);min-width:12px"></div>
+    <div class="title" id="footStatus">ALL SYSTEMS NOMINAL</div>
+    <div class="seg cap" style="background:var(--c5)"></div>
+  </div>
+</div>
+
+<script>
+(() => {
+  "use strict";
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const N = window.GalaxyNative || null; // present when running inside the Android app
+
+  /* ---------- storage (safe) ---------- */
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem("gops:" + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+    set(k, v) { try { localStorage.setItem("gops:" + k, JSON.stringify(v)); } catch {} }
+  };
+  const reduceMotion = (() => { try { return matchMedia("(prefers-reduced-motion: reduce)").matches; } catch { return false; } })();
+  const settings = Object.assign({ sound: true, haptics: true, wake: false, theme: "classic", anim: !reduceMotion }, store.get("settings", {}));
+
+  /* ---------- motion helpers ---------- */
+  function animate(el, cls, delay) {
+    if (!settings.anim || !el) return;
+    const run = () => {
+      el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls);
+      el.addEventListener("animationend", () => el.classList.remove(cls), { once: true });
+    };
+    delay ? setTimeout(run, delay) : run();
+  }
+  function stagger(els, cls, step, max) {
+    els.slice(0, max).forEach((el, i) => {
+      el.style.animationDelay = (i * step) + "ms";
+      el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls);
+      el.addEventListener("animationend", () => { el.classList.remove(cls); el.style.animationDelay = ""; }, { once: true });
+    });
+  }
+  let typeTimer;
+  function typeTitle(text) {
+    const el = document.querySelector("#panelTitle");
+    clearInterval(typeTimer);
+    if (!settings.anim) { el.textContent = text; el.classList.remove("typing"); return; }
+    let i = 0; el.textContent = ""; el.classList.add("typing");
+    typeTimer = setInterval(() => {
+      el.textContent = text.slice(0, ++i);
+      if (i >= text.length) { clearInterval(typeTimer); el.classList.remove("typing"); }
+    }, 40);
+  }
+  function scramble(panel) {
+    if (!settings.anim) return;
+    const chars = "0123456789ABCDEF";
+    panel.querySelectorAll(".stat span").forEach(el => {
+      const final = el.textContent;
+      if (!/[0-9A-Z]/.test(final) || el.dataset.scr) return;
+      el.dataset.scr = "1";
+      let n = 0;
+      const t = setInterval(() => {
+        if (++n > 6) { clearInterval(t); el.textContent = final; delete el.dataset.scr; return; }
+        el.textContent = final.replace(/[0-9A-Z]/g, () => chars[(Math.random() * 16) | 0]);
+      }, 40);
+    });
+  }
+  function clearMotion() {
+    document.querySelectorAll(".enter, .tile-in, .chase, .select").forEach(el => {
+      el.classList.remove("enter", "tile-in", "chase", "select");
+      el.style.animationDelay = "";
+    });
+  }
+  function animatePanel(panel) {
+    clearMotion();
+    if (!settings.anim) return;
+    document.querySelectorAll("#side > *").forEach((el, i) => {
+      if (!el.classList.contains("active")) animate(el, "chase", i * 35);
+    });
+    animate(document.querySelector(".navbtn.active"), "select");
+    document.querySelectorAll(".elbow, .hbar .seg").forEach((el, i) => animate(el, "chase", 80 + i * 30));
+    stagger([...panel.children].filter(c => !c.classList.contains("grid")), "enter", 45, 14);
+    panel.querySelectorAll(".grid").forEach(g => stagger([...g.children], "tile-in", 30, 16));
+    scramble(panel);
+  }
+  const saveSettings = () => store.set("settings", settings);
+
+  /* ---------- audio chirps ---------- */
+  let ac;
+  function tone(freqs, dur = 0.07, type = "sine", vol = 0.08) {
+    if (!settings.sound) return;
+    try {
+      ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+      let t = ac.currentTime;
+      for (const f of [].concat(freqs)) {
+        const o = ac.createOscillator(), g = ac.createGain();
+        o.type = type; o.frequency.value = f;
+        g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        o.connect(g).connect(ac.destination); o.start(t); o.stop(t + dur);
+        t += dur * 0.9;
+      }
+    } catch {}
+  }
+  const chirps = [[1320, 1760], [990, 1480], [1760, 1320], [1175, 1568], [880, 1320, 1760]];
+  const beep = () => { tone(chirps[(Math.random() * chirps.length) | 0], 0.06); buzz(12); };
+  const buzz = (ms) => {
+    if (!settings.haptics) return;
+    try {
+      if (N) N.vibrate(Array.isArray(ms) ? ms.reduce((a, b) => a + b, 0) : ms);
+      else if (navigator.vibrate) navigator.vibrate(ms);
+    } catch {}
+  };
+
+  document.addEventListener("pointerdown", (e) => {
+    const t = e.target.closest("button, a.tile");
+    if (!t) return;
+    beep();
+    if (!t.classList.contains("navbtn")) animate(t, "flash");
+  });
+
+  const footer = $("#footStatus");
+  let footTimer;
+  function status(msg, ms = 2500) {
+    footer.textContent = msg;
+    clearTimeout(footTimer);
+    footTimer = setTimeout(() => (footer.textContent = document.body.classList.contains("red-alert") ? "ALL HANDS TO STATIONS" : "ALL SYSTEMS NOMINAL"), ms);
+  }
+
+  /* ---------- panels ---------- */
+  function show(id) {
+    $$(".panel").forEach(p => p.classList.toggle("active", p.id === id));
+    $$(".navbtn").forEach(b => b.classList.toggle("active", b.dataset.panel === id));
+    typeTitle($("#" + id).dataset.title);
+    $("#main").scrollTop = 0;
+    store.set("panel", id);
+    if (id === "systems") refreshSystems();
+    animatePanel($("#" + id));
+  }
+  $$(".navbtn").forEach(b => b.addEventListener("click", () => show(b.dataset.panel)));
+
+  /* ---------- clock / stardate ---------- */
+  const pad = (n) => String(n).padStart(2, "0");
+  const t0 = Date.now();
+  function stardate(d) {
+    const start = new Date(d.getFullYear(), 0, 1);
+    const end = new Date(d.getFullYear() + 1, 0, 1);
+    const frac = (d - start) / (end - start);
+    return ((d.getFullYear() - 2000) * 1000 + frac * 1000).toFixed(1);
+  }
+  function tick() {
+    const d = new Date();
+    const hm = pad(d.getHours()) + ":" + pad(d.getMinutes());
+    $("#clock").textContent = hm;
+    $("#sec").textContent = pad(d.getSeconds());
+    $("#hdrClock").textContent = hm;
+    $("#stardate").textContent = stardate(d);
+    $("#date").textContent = d.toLocaleDateString(undefined, { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+    const up = Math.floor((Date.now() - t0) / 1000);
+    $("#opsUp").textContent = pad(Math.floor(up / 3600)) + ":" + pad(Math.floor(up / 60) % 60) + ":" + pad(up % 60);
+    $("#codeTop").textContent = pad(d.getMonth() + 1) + "-" + String(d.getSeconds() * 73 + 1000).slice(-4);
+  }
+  setInterval(tick, 1000); tick();
+
+  /* ---------- battery ---------- */
+  function setBatt(level, charging) {
+    const pct = Math.round(level * 100) + "%";
+    ["#hdrBatt", "#opsBatt", "#sysBatt"].forEach(s => $(s).textContent = pct);
+    $("#sysCharge").textContent = charging ? "CHARGING" : "DISCHARGE";
+    const m = $("#battMeter");
+    m.style.width = pct;
+    m.style.background = level < 0.2 ? "var(--c7)" : "var(--c5)";
+    if (level < 0.15 && !charging) status("WARNING: POWER RESERVES CRITICAL", 5000);
+  }
+  if (N && N.battery) {
+    const u = () => { try { const b = JSON.parse(N.battery()); if (typeof b.level === "number") setBatt(b.level, b.charging); } catch {} };
+    u(); setInterval(u, 30000); addEventListener("focus", u);
+  } else if (navigator.getBattery) {
+    navigator.getBattery().then(b => {
+      const u = () => setBatt(b.level, b.charging);
+      u(); b.addEventListener("levelchange", u); b.addEventListener("chargingchange", u);
+    }).catch(() => {});
+  } else {
+    ["#hdrBatt", "#opsBatt", "#sysBatt"].forEach(s => $(s).textContent = "N/A");
+  }
+
+  /* ---------- network ---------- */
+  function refreshNet() {
+    const c = navigator.connection || {};
+    const online = navigator.onLine;
+    const type = (c.effectiveType || c.type || (online ? "LINK" : "")).toUpperCase();
+    $("#hdrNet").textContent = online ? type || "UP" : "DOWN";
+    $("#opsNet").textContent = online ? "ONLINE" : "SEVERED";
+    $("#sysOnline").textContent = online ? "ONLINE" : "OFFLINE";
+    $("#sysNetType").textContent = type || "--";
+    $("#sysDown").textContent = c.downlink ? c.downlink + " MB/S" : "--";
+    $("#sysRtt").textContent = c.rtt != null ? c.rtt + " MS" : "--";
+  }
+  addEventListener("online", () => { refreshNet(); status("SUBSPACE LINK RESTORED"); });
+  addEventListener("offline", () => { refreshNet(); status("SUBSPACE LINK LOST", 4000); });
+  if (navigator.connection) navigator.connection.addEventListener?.("change", refreshNet);
+  refreshNet();
+
+  /* ---------- systems ---------- */
+  const cores = navigator.hardwareConcurrency || "--";
+  $("#opsCores").textContent = cores;
+  function refreshSystems() {
+    $("#sysCores").textContent = cores;
+    $("#sysMem").textContent = navigator.deviceMemory ? "≥" + navigator.deviceMemory + " GB" : "--";
+    $("#sysScreen").textContent = screen.width + "×" + screen.height;
+    $("#sysDpr").textContent = (devicePixelRatio || 1).toFixed(2);
+    $("#sysOrient").textContent = (screen.orientation?.type || (innerWidth > innerHeight ? "landscape" : "portrait")).split("-")[0].slice(0, 4).toUpperCase();
+    if (navigator.storage?.estimate) navigator.storage.estimate().then(e => {
+      $("#sysStore").textContent = (e.usage / 1048576).toFixed(1) + " MB";
+    }).catch(() => {});
+    refreshNet();
+  }
+  const bars = $("#bars");
+  for (let i = 0; i < 24; i++) bars.appendChild(document.createElement("i"));
+  let frames = 0, last = performance.now();
+  (function loop(now) {
+    frames++;
+    if (now - last >= 1000) {
+      const fps = Math.round(frames * 1000 / (now - last));
+      frames = 0; last = now;
+      if ($("#systems").classList.contains("active")) {
+        $("#fps").textContent = fps;
+        const b = bars.firstElementChild; bars.appendChild(b);
+        b.style.height = Math.min(100, fps / 1.2) + "%";
+        [...bars.children].forEach((x, i) => { if (!x.style.height) x.style.height = (20 + Math.random() * 60) + "%"; });
+      }
+    }
+    requestAnimationFrame(loop);
+  })(last);
+
+  /* ---------- launch slots ---------- */
+  const intentCat = (cat) => `intent://#Intent;action=android.intent.action.MAIN;category=android.intent.category.${cat};end`;
+  const DEFAULT_SLOTS = [
+    { name: "PHONE", url: "tel:" },
+    { name: "MESSAGES", url: "sms:" },
+    { name: "CAMERA", url: "intent://#Intent;action=android.media.action.STILL_IMAGE_CAMERA;end" },
+    { name: "GALLERY", url: intentCat("APP_GALLERY") },
+    { name: "CALENDAR", url: intentCat("APP_CALENDAR") },
+    { name: "MUSIC", url: intentCat("APP_MUSIC") },
+    { name: "CALCULATOR", url: intentCat("APP_CALCULATOR") },
+    { name: "SETTINGS", url: "intent://#Intent;action=android.settings.SETTINGS;end" },
+    { name: "MAPS", url: "geo:0,0?q=" },
+    { name: "WEB", url: "https://www.google.com" }
+  ];
+  const COMMS = [
+    { name: "VOICE", url: "tel:" },
+    { name: "TEXT", url: "sms:" },
+    { name: "EMAIL", url: intentCat("APP_EMAIL") },
+    { name: "CONTACTS", url: intentCat("APP_CONTACTS") },
+    { name: "MESSENGER", url: intentCat("APP_MESSAGING") },
+    { name: "BROWSER", url: intentCat("APP_BROWSER") }
+  ];
+  let slots = store.get("slots", DEFAULT_SLOTS);
+
+  function tileHTML(s, i, removable) {
+    const a = document.createElement(removable ? "button" : "a");
+    a.className = "tile";
+    if (!removable) { a.href = s.url; a.rel = "noopener"; }
+    a.innerHTML = `<span class="${removable ? "x" : "n"}">${removable ? "×" : pad(i + 1) + "-" + (100 + i * 7)}</span>`;
+    a.append(document.createTextNode(s.name));
+    return a;
+  }
+  function renderSlots() {
+    const q = $("#quickGrid"), e = $("#editGrid"), c = $("#commsGrid");
+    q.replaceChildren(...slots.map((s, i) => tileHTML(s, i)));
+    c.replaceChildren(...COMMS.map((s, i) => tileHTML(s, i)));
+    e.replaceChildren(...slots.map((s, i) => {
+      const t = tileHTML(s, i, true);
+      t.title = "Remove " + s.name;
+      t.addEventListener("click", () => { slots.splice(i, 1); store.set("slots", slots); renderSlots(); status(s.name + " SLOT CLEARED"); });
+      return t;
+    }));
+  }
+  renderSlots();
+  document.addEventListener("click", (e) => {
+    const a = e.target.closest("a.tile");
+    if (!a) return;
+    status("ACCESSING " + a.textContent.replace(/^\S+\s*/, "").trim());
+    if (!settings.anim) return;
+    e.preventDefault();
+    animate(a, "launch");
+    const href = a.getAttribute("href");
+    setTimeout(() => { location.href = href; }, 260);
+  });
+  $("#btnAddSlot").addEventListener("click", () => {
+    const name = $("#newName").value.trim().toUpperCase(), url = $("#newUrl").value.trim();
+    if (!name || !url) return status("LABEL AND LINK REQUIRED");
+    if (/^\s*javascript:/i.test(url)) return status("LINK REJECTED");
+    slots.push({ name, url }); store.set("slots", slots); renderSlots();
+    $("#newName").value = $("#newUrl").value = "";
+    status(name + " SLOT ASSIGNED");
+  });
+  $("#btnResetSlots").addEventListener("click", () => { slots = DEFAULT_SLOTS.slice(); store.set("slots", slots); renderSlots(); status("DEFAULTS RESTORED"); });
+
+  $$("[data-hail]").forEach(b => b.addEventListener("click", () => {
+    const v = $("#hailNum").value.trim();
+    if (!v) return status("ENTER HAILING TARGET");
+    location.href = b.dataset.hail + ":" + encodeURIComponent(v).replace(/%2B/g, "+").replace(/%40/g, "@");
+  }));
+
+  /* ---------- red alert ---------- */
+  let alarmTimer;
+  $("#btnAlert").addEventListener("click", () => {
+    const on = document.body.classList.toggle("red-alert");
+    $("#btnAlert").textContent = on ? "STAND DOWN" : "RED ALERT";
+    clearInterval(alarmTimer);
+    if (on) {
+      const whoop = () => { tone([440, 520, 620, 740, 880], 0.12, "sawtooth", 0.05); buzz([200, 100, 200]); };
+      whoop(); alarmTimer = setInterval(whoop, 1600);
+      status("ALL HANDS TO STATIONS", 1e9);
+    } else status("CONDITION GREEN");
+  });
+
+  /* ---------- fullscreen / wake lock ---------- */
+  $("#btnFull").addEventListener("click", () => {
+    if (N) return show("apps");
+    const d = document;
+    if (!d.fullscreenElement) d.documentElement.requestFullscreen?.({ navigationUI: "hide" }).catch(() => status("FULL SCREEN UNAVAILABLE"));
+    else d.exitFullscreen?.();
+  });
+  let wakeLock = null;
+  async function applyWake() {
+    if (N) { N.keepAwake(!!settings.wake); return; }
+    try {
+      if (settings.wake && "wakeLock" in navigator) {
+        wakeLock = await navigator.wakeLock.request("screen");
+      } else if (wakeLock) { await wakeLock.release(); wakeLock = null; }
+    } catch { status("WAKE LOCK UNAVAILABLE"); }
+  }
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && settings.wake) applyWake(); });
+
+  /* ---------- config toggles / themes ---------- */
+  function paintToggles() {
+    $$("[data-toggle]").forEach(b => {
+      const on = !!settings[b.dataset.toggle];
+      b.setAttribute("aria-pressed", on); b.textContent = on ? "ON" : "OFF";
+    });
+  }
+  $$("[data-toggle]").forEach(b => b.addEventListener("click", () => {
+    const k = b.dataset.toggle; settings[k] = !settings[k]; saveSettings(); paintToggles();
+    if (k === "wake") applyWake();
+    if (k === "anim" && settings.anim) animatePanel($(".panel.active"));
+    status(k.toUpperCase() + (settings[k] ? " ENABLED" : " DISABLED"));
+  }));
+  function applyTheme() {
+    if (settings.theme === "classic") document.documentElement.removeAttribute("data-theme");
+    else document.documentElement.setAttribute("data-theme", settings.theme);
+  }
+  $$("[data-theme-set]").forEach(b => b.addEventListener("click", () => {
+    settings.theme = b.dataset.themeSet; saveSettings(); applyTheme(); status("SCHEME " + b.textContent + " LOADED");
+  }));
+  paintToggles(); applyTheme(); if (settings.wake) applyWake();
+
+  /* ---------- nav: sensors + location ---------- */
+  function onOrient(e) {
+    let h = e.webkitCompassHeading ?? (e.absolute || e.alpha != null ? 360 - (e.alpha || 0) : null);
+    if (h == null) return;
+    h = (h + 360) % 360;
+    $("#needle").style.transform = `rotate(${h}deg)`;
+    $("#bearing").textContent = pad(Math.round(h)).padStart(3, "0") + "°";
+    $("#tilt").textContent = Math.round(e.beta || 0) + "° / " + Math.round(e.gamma || 0) + "°";
+  }
+  $("#btnSensors").addEventListener("click", async () => {
+    try {
+      if (typeof DeviceOrientationEvent !== "undefined" && DeviceOrientationEvent.requestPermission) {
+        if ((await DeviceOrientationEvent.requestPermission()) !== "granted") return status("SENSOR ACCESS DENIED");
+      }
+      addEventListener("ondeviceorientationabsolute" in window ? "deviceorientationabsolute" : "deviceorientation", onOrient);
+      status("SENSORS ENGAGED");
+    } catch { status("SENSORS UNAVAILABLE"); }
+  });
+  let lastPos = null;
+  $("#btnLocate").addEventListener("click", () => {
+    if (!navigator.geolocation) return status("POSITIONING UNAVAILABLE");
+    status("TRIANGULATING...", 10000);
+    navigator.geolocation.getCurrentPosition(p => {
+      const c = p.coords; lastPos = c;
+      $("#lat").textContent = c.latitude.toFixed(5);
+      $("#lon").textContent = c.longitude.toFixed(5);
+      $("#acc").textContent = "±" + Math.round(c.accuracy) + " M";
+      $("#alt").textContent = c.altitude != null ? Math.round(c.altitude) + " M" : "--";
+      status("POSITION LOCKED");
+    }, err => status("POSITION FAILED: " + (err.code === 1 ? "DENIED" : "NO FIX")), { enableHighAccuracy: true, timeout: 15000 });
+  });
+  $("#btnMap").addEventListener("click", () => {
+    location.href = lastPos ? `geo:${lastPos.latitude},${lastPos.longitude}?q=${lastPos.latitude},${lastPos.longitude}` : "geo:0,0?q=";
+  });
+
+  /* ---------- personal log ---------- */
+  let logs = store.get("logs", []);
+  function renderLogs() {
+    const list = $("#logList");
+    if (!logs.length) { list.innerHTML = '<p class="sub">No entries on record.</p>'; return; }
+    list.replaceChildren(...logs.slice().reverse().map(l => {
+      const d = document.createElement("div"); d.className = "log";
+      const t = document.createElement("time"); t.textContent = "STARDATE " + l.sd + " · " + new Date(l.ts).toLocaleString();
+      const p = document.createElement("p"); p.textContent = l.text;
+      d.append(t, p); return d;
+    }));
+  }
+  $("#btnLogSave").addEventListener("click", () => {
+    const text = $("#logText").value.trim();
+    if (!text) return status("NO ENTRY TO RECORD");
+    logs.push({ ts: Date.now(), sd: stardate(new Date()), text }); store.set("logs", logs);
+    $("#logText").value = ""; renderLogs(); status("LOG ENTRY RECORDED");
+  });
+  let purgeArmed = 0;
+  $("#btnLogClear").addEventListener("click", () => {
+    const b = $("#btnLogClear");
+    if (!logs.length) return status("ARCHIVE ALREADY EMPTY");
+    if (Date.now() - purgeArmed > 3000) {
+      purgeArmed = Date.now(); b.textContent = "TAP TO CONFIRM"; b.classList.add("blink");
+      status("TAP AGAIN TO PURGE ALL ENTRIES", 3000);
+      setTimeout(() => { b.textContent = "PURGE ALL"; b.classList.remove("blink"); }, 3000);
+      return;
+    }
+    purgeArmed = 0; b.textContent = "PURGE ALL"; b.classList.remove("blink");
+    logs = []; store.set("logs", logs); renderLogs(); status("ARCHIVE PURGED");
+  });
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  $("#btnLogVoice").addEventListener("click", () => {
+    if (N) { $("#btnLogVoice").classList.add("blink"); status("LISTENING...", 6000); N.startVoice(); return; }
+    if (!SR) return status("VOICE INPUT UNAVAILABLE");
+    const r = new SR(); r.lang = navigator.language || "en-US"; r.interimResults = false;
+    r.onresult = (e) => { const ta = $("#logText"); ta.value = (ta.value + " " + e.results[0][0].transcript).trim(); };
+    r.onerror = () => status("VOICE INPUT FAILED");
+    r.onend = () => $("#btnLogVoice").classList.remove("blink");
+    $("#btnLogVoice").classList.add("blink"); status("LISTENING...", 6000); r.start();
+  });
+  renderLogs();
+
+  /* ---------- install (PWA) ---------- */
+  let deferred;
+  addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); deferred = e; $("#btnInstall").hidden = false; });
+  $("#btnInstall").addEventListener("click", async () => {
+    if (!deferred) return; deferred.prompt(); await deferred.userChoice; deferred = null; $("#btnInstall").hidden = true;
+  });
+  if (matchMedia("(display-mode: standalone)").matches) $("#installHint").textContent = "Running as installed app.";
+  if ("serviceWorker" in navigator && location.protocol === "https:") {
+    navigator.serviceWorker.register("sw.js").catch(() => {});
+  }
+
+  /* ---------- Android app integration ---------- */
+  if (N) {
+    $('[data-panel="apps"]').hidden = false;
+    $("#launcherCfg").hidden = false;
+    $("#installHint").hidden = true;
+    $("#btnFull").textContent = "ALL APPS";
+    let apps = [], pinMode = false;
+    const renderApps = () => {
+      const q = $("#appSearch").value.trim().toLowerCase();
+      const list = apps.filter(a => !q || a.label.toLowerCase().includes(q));
+      $("#appCount").textContent = list.length + " OF " + apps.length + " APPLICATIONS";
+      $("#appGrid").replaceChildren(...list.map((a, i) => {
+        const b = document.createElement("button");
+        b.className = "tile";
+        b.innerHTML = `<span class="n">${pad(i + 1)}</span>`;
+        b.append(document.createTextNode(a.label.toUpperCase()));
+        b.addEventListener("click", () => {
+          const name = a.label.toUpperCase();
+          if (pinMode) {
+            slots.push({ name, url: "app:" + a.pkg }); store.set("slots", slots); renderSlots();
+            status(name + " PINNED TO QUICK LAUNCH");
+          } else {
+            status("ACCESSING " + name); animate(b, "launch");
+            setTimeout(() => N.launchApp(a.pkg), settings.anim ? 260 : 0);
+          }
+        });
+        return b;
+      }));
+    };
+    const loadApps = () => { try { apps = JSON.parse(N.listApps()); } catch { apps = []; } renderApps(); };
+    const homeState = () => {
+      let isHome = false; try { isHome = N.isDefaultHome(); } catch {}
+      $("#homeState").textContent = isHome
+        ? "Galaxy OPS is your home screen."
+        : "Not your home screen yet. Tap below, choose Galaxy OPS, then tap Home.";
+      $("#btnSetHome").textContent = isHome ? "CHANGE HOME SCREEN" : "SET AS HOME SCREEN";
+    };
+    $("#appSearch").addEventListener("input", renderApps);
+    $("#btnPin").addEventListener("click", () => {
+      pinMode = !pinMode;
+      $("#btnPin").textContent = "PIN MODE: " + (pinMode ? "ON" : "OFF");
+      $("#btnPin").classList.toggle("alt", pinMode);
+      status(pinMode ? "TAP AN APP TO PIN IT" : "PIN MODE DISENGAGED");
+    });
+    $("#btnRefreshApps").addEventListener("click", () => { loadApps(); status("DIRECTORY RESCANNED"); });
+    $("#btnSetHome").addEventListener("click", () => N.openHomeSettings());
+    window.onNativeStatus = (m) => status(m, 3500);
+    window.onNativeVoice = (text) => {
+      $("#btnLogVoice").classList.remove("blink");
+      if (!text) return status("NO VOICE INPUT");
+      const ta = $("#logText"); ta.value = (ta.value + " " + text).trim();
+      status("TRANSCRIPTION COMPLETE");
+    };
+    window.onNativeResume = () => { loadApps(); homeState(); };
+    window.onNativeHome = () => show("ops");
+    window.onNativeBack = () => {
+      if ($(".panel.active").id !== "ops") { show("ops"); return true; }
+      return false;
+    };
+    loadApps(); homeState();
+  } else if (store.get("panel", "ops") === "apps") {
+    store.set("panel", "ops");
+  }
+
+  show(store.get("panel", "ops"));
+  setTimeout(() => status("WELCOME ABOARD", 2500), 300);
+})();
+</script>
+</body>
+</html>
