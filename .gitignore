@@ -21,6 +21,8 @@
 !projects/claude/smart-connections-mcp/
 
 # In-tree projects (not submodules)
+!projects/second-brain/
+!projects/second-brain/**
 !projects/homelab-diagram/
 !projects/homelab-diagram/**
 !projects/google-reviews/

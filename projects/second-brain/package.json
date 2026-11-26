@@ -1,0 +1,21 @@
+{
+  "name": "second-brain",
+  "version": "1.0.0",
+  "description": "A personal second-brain memory shared by every AI assistant: MCP (stdio + HTTP), REST/OpenAPI and CLI over a plain Markdown vault.",
+  "type": "module",
+  "license": "MIT",
+  "engines": { "node": ">=22.13" },
+  "bin": {
+    "brain": "src/cli.js",
+    "second-brain-mcp": "src/stdio.js"
+  },
+  "scripts": {
+    "mcp": "node --no-warnings src/stdio.js",
+    "serve": "node --no-warnings src/http.js",
+    "test": "node --no-warnings --test --test-concurrency=1 test/*.test.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "zod": "^4.6.7"
+  }
+}
